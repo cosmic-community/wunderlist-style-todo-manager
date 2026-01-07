@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { List } from '@/types'
 import { useRouter } from 'next/navigation'
+import SkeletonLoader from '@/components/SkeletonLoader'
 
 interface ClientListHeaderProps {
   listSlug: string
@@ -11,11 +12,13 @@ interface ClientListHeaderProps {
 export default function ClientListHeader({ listSlug }: ClientListHeaderProps) {
   const [list, setList] = useState<List | null>(null)
   const [notFound, setNotFound] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
     async function fetchList() {
       try {
+        setIsLoading(true)
         const response = await fetch('/api/lists')
         if (response.ok) {
           const data = await response.json()
@@ -28,6 +31,8 @@ export default function ClientListHeader({ listSlug }: ClientListHeaderProps) {
         }
       } catch (error) {
         console.error('Error fetching list:', error)
+      } finally {
+        setIsLoading(false)
       }
     }
 
@@ -40,12 +45,12 @@ export default function ClientListHeader({ listSlug }: ClientListHeaderProps) {
     }
   }, [notFound, router])
 
+  if (isLoading) {
+    return <SkeletonLoader variant="header" />
+  }
+
   if (!list) {
-    return (
-      <div className="mb-6">
-        <div className="h-8 w-48 bg-gray-800 rounded animate-pulse" />
-      </div>
-    )
+    return null
   }
 
   return (

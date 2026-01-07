@@ -7,10 +7,12 @@ import { useState, useRef, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
+import SkeletonLoader from './SkeletonLoader'
 
 interface SidebarProps {
   lists: List[]
   currentListSlug?: string
+  isLoading?: boolean
   onListCreated?: (list: List) => void
   onListReplaced?: (tempId: string, realList: List) => void
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
@@ -18,7 +20,7 @@ interface SidebarProps {
   onListClick?: (slug?: string) => void // Changed: Add navigation handler
 }
 
-export default function Sidebar({ lists, currentListSlug, onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
+export default function Sidebar({ lists, currentListSlug, isLoading = false, onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
   const [editingList, setEditingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -121,7 +123,16 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListR
               <span className="font-medium">All Tasks</span>
             </button>
             
-            {lists.length > 0 && (
+            {isLoading ? (
+              <div className="pt-4">
+                <div className="pb-2 px-3">
+                  <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Lists
+                  </h3>
+                </div>
+                <SkeletonLoader variant="list" count={3} />
+              </div>
+            ) : lists.length > 0 && (
               <>
                 <div className="pt-4 pb-2 px-3">
                   <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">

@@ -12,6 +12,7 @@ interface ClientSidebarProps {
 
 export default function ClientSidebar({ currentListSlug, onListChange }: ClientSidebarProps) {
   const [lists, setLists] = useState<List[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
   // Track deleted list IDs to prevent them from reappearing on fetch
@@ -19,6 +20,7 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
 
   const fetchLists = useCallback(async () => {
     try {
+      setIsLoading(true)
       const response = await fetch('/api/lists')
       if (response.ok) {
         const data = await response.json()
@@ -42,6 +44,8 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
       }
     } catch (error) {
       console.error('Error fetching lists:', error)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
@@ -120,6 +124,7 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
     <Sidebar 
       lists={lists} 
       currentListSlug={currentListSlug} 
+      isLoading={isLoading}
       onListCreated={handleListCreated}
       onListReplaced={handleListReplaced}
       onListUpdated={handleListUpdated}

@@ -13,12 +13,14 @@ interface ClientMobileHeaderProps {
 export default function ClientMobileHeader({ currentListSlug, onListChange }: ClientMobileHeaderProps) {
   const [lists, setLists] = useState<List[]>([])
   const [currentList, setCurrentList] = useState<List | undefined>(undefined)
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   // Track deleted list IDs to prevent them from reappearing on fetch
   const deletedListIds = useRef<Set<string>>(new Set())
 
   const fetchLists = useCallback(async () => {
     try {
+      setIsLoading(true)
       const response = await fetch('/api/lists')
       if (response.ok) {
         const data = await response.json()
@@ -37,6 +39,8 @@ export default function ClientMobileHeader({ currentListSlug, onListChange }: Cl
       }
     } catch (error) {
       console.error('Error fetching lists:', error)
+    } finally {
+      setIsLoading(false)
     }
   }, [currentListSlug])
 
@@ -113,7 +117,8 @@ export default function ClientMobileHeader({ currentListSlug, onListChange }: Cl
   return (
     <MobileHeader 
       lists={lists} 
-      currentList={currentList} 
+      currentList={currentList}
+      isLoading={isLoading}
       onListDeleted={handleListDeleted}
       onListCreated={handleListCreated}
       onListUpdated={handleListUpdated}

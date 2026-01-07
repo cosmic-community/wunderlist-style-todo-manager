@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Task, List } from '@/types'
 import TaskList from '@/components/TaskList'
-import { Loader2 } from 'lucide-react'
+import SkeletonLoader from '@/components/SkeletonLoader'
 
 interface ClientTaskListProps {
   listSlug?: string
@@ -55,8 +55,8 @@ export default function ClientTaskList({ listSlug }: ClientTaskListProps) {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+      <div className="space-y-2 pb-24">
+        <SkeletonLoader variant="task" count={5} />
       </div>
     )
   }
