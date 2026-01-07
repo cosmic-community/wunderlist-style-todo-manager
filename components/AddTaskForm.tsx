@@ -48,10 +48,18 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     // Optimistically add the task immediately
     onOptimisticAdd(optimisticTask)
     
-    // Reset form immediately
+    // Reset form but keep it expanded and focused
     const taskTitle = title
     setTitle('')
-    setIsExpanded(false)
+    // Changed: Don't collapse the form - keep it expanded for fast adding
+    // setIsExpanded(false)
+    
+    // Changed: Immediately refocus the input for fast consecutive task adding
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus()
+      }
+    }, 0)
     
     // Send to server in background
     try {

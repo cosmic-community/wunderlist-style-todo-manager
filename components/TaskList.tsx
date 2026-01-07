@@ -171,71 +171,76 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   const completedTasks = tasks.filter(task => task.metadata.completed)
   
   return (
-    <div className="space-y-2">
-      {/* Loading indicator */}
-      {isLoading && (
-        <div className="flex items-center justify-center py-2">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-        </div>
-      )}
-      
-      {/* Pending Tasks */}
-      {pendingTasks.map((task) => (
-        <TaskCard 
-          key={task.id} 
-          task={task} 
-          lists={lists}
-          onOptimisticToggle={handleOptimisticToggle}
-          onOptimisticDelete={handleOptimisticDelete}
-          onOptimisticUpdate={handleOptimisticUpdate}
-          onSyncComplete={clearPendingState}
-        />
-      ))}
-      
-      {/* Completed Section - Collapsible */}
-      {completedTasks.length > 0 && (
-        <div className="pt-4">
-          <button
-            onClick={() => setShowCompleted(!showCompleted)}
-            className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors py-2"
-          >
-            <ChevronRight className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
-            <span className="text-sm font-medium">Completed ({completedTasks.length})</span>
-          </button>
-          
-          {showCompleted && (
-            <div className="space-y-2 mt-2">
-              {completedTasks.map((task) => (
-                <TaskCard 
-                  key={task.id} 
-                  task={task} 
-                  lists={lists}
-                  onOptimisticToggle={handleOptimisticToggle}
-                  onOptimisticDelete={handleOptimisticDelete}
-                  onOptimisticUpdate={handleOptimisticUpdate}
-                  onSyncComplete={clearPendingState}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-      
-      {/* Empty State */}
-      {pendingTasks.length === 0 && completedTasks.length === 0 && (
-        <div className="text-center py-12">
-          <p className="text-gray-500 dark:text-gray-400 text-lg">No tasks yet. Add your first task below!</p>
-        </div>
-      )}
-      
-      {/* Add Task Form - Always at bottom */}
-      <div className="pt-4">
-        <AddTaskForm 
-          lists={lists} 
-          listSlug={listSlug} 
-          onOptimisticAdd={handleOptimisticAdd}
-        />
+    <>
+      {/* Changed: Task list with bottom padding for fixed add form */}
+      <div className="space-y-2 pb-24">
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="flex items-center justify-center py-2">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+          </div>
+        )}
+        
+        {/* Pending Tasks */}
+        {pendingTasks.map((task) => (
+          <TaskCard 
+            key={task.id} 
+            task={task} 
+            lists={lists}
+            onOptimisticToggle={handleOptimisticToggle}
+            onOptimisticDelete={handleOptimisticDelete}
+            onOptimisticUpdate={handleOptimisticUpdate}
+            onSyncComplete={clearPendingState}
+          />
+        ))}
+        
+        {/* Completed Section - Collapsible */}
+        {completedTasks.length > 0 && (
+          <div className="pt-4">
+            <button
+              onClick={() => setShowCompleted(!showCompleted)}
+              className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors py-2"
+            >
+              <ChevronRight className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
+              <span className="text-sm font-medium">Completed ({completedTasks.length})</span>
+            </button>
+            
+            {showCompleted && (
+              <div className="space-y-2 mt-2">
+                {completedTasks.map((task) => (
+                  <TaskCard 
+                    key={task.id} 
+                    task={task} 
+                    lists={lists}
+                    onOptimisticToggle={handleOptimisticToggle}
+                    onOptimisticDelete={handleOptimisticDelete}
+                    onOptimisticUpdate={handleOptimisticUpdate}
+                    onSyncComplete={clearPendingState}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Empty State */}
+        {pendingTasks.length === 0 && completedTasks.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-gray-500 dark:text-gray-400 text-lg">No tasks yet. Add your first task below!</p>
+          </div>
+        )}
       </div>
-    </div>
+      
+      {/* Changed: Fixed Add Task Form at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 p-4 z-10">
+        <div className="max-w-2xl mx-auto">
+          <AddTaskForm 
+            lists={lists} 
+            listSlug={listSlug} 
+            onOptimisticAdd={handleOptimisticAdd}
+          />
+        </div>
+      </div>
+    </>
   )
 }
