@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import CosmicBadge from '@/components/CosmicBadge'
 import ThemeProvider from '@/components/ThemeProvider'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -62,9 +63,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider>
-          {children}
-          <CosmicBadge bucketSlug={bucketSlug} />
-          <script src="/dashboard-console-capture.js"></script>
+          <AuthProvider>
+            {children}
+            <CosmicBadge bucketSlug={bucketSlug} />
+            <script src="/dashboard-console-capture.js"></script>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

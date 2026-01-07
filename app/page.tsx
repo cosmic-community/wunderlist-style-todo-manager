@@ -5,8 +5,9 @@ import ClientTaskList from '@/components/ClientTaskList'
 import ClientSidebar from '@/components/ClientSidebar'
 import ClientMobileHeader from '@/components/ClientMobileHeader'
 import ClientListHeader from '@/components/ClientListHeader'
+import AuthGuard from '@/components/AuthGuard'
 
-export default function Home() {
+function TodoApp() {
   // Changed: Manage current list slug in state for client-side navigation
   const [currentListSlug, setCurrentListSlug] = useState<string | undefined>(undefined)
 
@@ -42,5 +43,13 @@ export default function Home() {
         </div>
       </main>
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <AuthGuard>
+      <TodoApp />
+    </AuthGuard>
   )
 }
