@@ -12,7 +12,7 @@ export default async function ListPage({
   const { slug } = await params
   
   return (
-    <div className="flex h-screen bg-black">
+    <div className="flex h-screen bg-gray-50 dark:bg-black">
       {/* Mobile Header */}
       <ClientMobileHeader currentListSlug={slug} />
       
