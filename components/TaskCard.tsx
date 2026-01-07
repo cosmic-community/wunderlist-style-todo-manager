@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useOptimistic } from 'react'
+import { useState, useOptimistic, useEffect } from 'react'
 import { Task, List } from '@/types'
 import { Calendar, Flag, Trash2, Edit2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -16,24 +16,30 @@ export default function TaskCard({ task, lists }: TaskCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   
-  // Optimistic state for task completion
+  // Optimistic state for task completion - syncs with task prop changes
   const [optimisticCompleted, setOptimisticCompleted] = useOptimistic(
     task.metadata.completed,
     (state, newCompleted: boolean) => newCompleted
   )
   
+  // Sync optimistic state when task prop changes (from server updates)
+  useEffect(() => {
+    setOptimisticCompleted(task.metadata.completed)
+  }, [task.metadata.completed, setOptimisticCompleted])
+  
   const handleToggleComplete = async () => {
-    // Optimistically update UI
+    // Optimistically update UI immediately
     setOptimisticCompleted(!optimisticCompleted)
     
     try {
       const response = await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ completed: !task.metadata.completed })
+        body: JSON.stringify({ completed: !optimisticCompleted })
       })
       
       if (response.ok) {
+        // Refresh to get latest data from server
         router.refresh()
       } else {
         // Revert on failure
