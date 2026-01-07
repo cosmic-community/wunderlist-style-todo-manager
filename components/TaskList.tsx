@@ -27,12 +27,19 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   const pendingNewTasksRef = useRef<Set<string>>(new Set())
   // Track pending state changes for existing tasks (keyed by task ID)
   const pendingStateChangesRef = useRef<Map<string, PendingTaskState>>(new Map())
+  // Changed: Track deleted task IDs to prevent them from reappearing on fetch
+  const deletedTaskIdsRef = useRef<Set<string>>(new Set())
   // Changed: Track tasks that are currently celebrating (showing confetti + fade out)
   // Now stores timestamp when animation started for more precise timing
   const [celebratingTasks, setCelebratingTasks] = useState<Map<string, number>>(new Map())
 
   // Fetch tasks from API
   const fetchTasks = useCallback(async () => {
+    // Changed: Skip fetch if there are pending deletes to avoid race conditions
+    if (deletedTaskIdsRef.current.size > 0) {
+      return
+    }
+    
     try {
       const response = await fetch('/api/tasks')
       if (!response.ok) throw new Error('Failed to fetch')
@@ -46,6 +53,11 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
             task => task.metadata.list?.slug === listSlug
           )
         }
+        
+        // Changed: Filter out any tasks that were recently deleted (to handle race conditions)
+        filteredTasks = filteredTasks.filter(
+          task => !deletedTaskIdsRef.current.has(task.id)
+        )
         
         // Merge server tasks with pending optimistic state
         setTasks(prevTasks => {
@@ -163,6 +175,9 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   }, [])
 
   const handleOptimisticDelete = useCallback((taskId: string) => {
+    // Changed: Add to deleted set to prevent reappearing on fetch
+    deletedTaskIdsRef.current.add(taskId)
+    
     // Remove from all pending tracking
     pendingNewTasksRef.current.delete(taskId)
     pendingStateChangesRef.current.delete(taskId)
@@ -173,6 +188,12 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
       return newMap
     })
     setTasks(prev => prev.filter(task => task.id !== taskId))
+    
+    // Changed: Clear the deleted ID after a delay to allow server sync
+    // This prevents the task from reappearing during the delete request
+    setTimeout(() => {
+      deletedTaskIdsRef.current.delete(taskId)
+    }, 5000)
   }, [])
 
   const handleOptimisticUpdate = useCallback((taskId: string, updates: Partial<Task['metadata']>) => {
