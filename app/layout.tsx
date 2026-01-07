@@ -7,8 +7,26 @@ import ThemeProvider from '@/components/ThemeProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Wunderlist-Style Todo Manager',
-  description: 'A beautiful todo list application inspired by Wunderlist, powered by Cosmic CMS',
+  title: 'Cosmic Todo',
+  description: 'A Wunderlist style todo list app powered by Cosmic',
+  openGraph: {
+    title: 'Cosmic Todo',
+    description: 'A Wunderlist style todo list app powered by Cosmic',
+    images: [
+      {
+        url: 'https://imgix.cosmicjs.com/25c3c790-ec03-11f0-8092-4592c74830bf-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Cosmic Todo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Cosmic Todo',
+    description: 'A Wunderlist style todo list app powered by Cosmic',
+    images: ['https://imgix.cosmicjs.com/25c3c790-ec03-11f0-8092-4592c74830bf-image.png'],
+  },
   icons: {
     icon: [
       {
