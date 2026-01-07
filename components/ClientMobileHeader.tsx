@@ -45,6 +45,35 @@ export default function ClientMobileHeader({ currentListSlug }: ClientMobileHead
     return () => clearInterval(interval)
   }, [fetchLists])
 
+  const handleListCreated = (newList: List) => {
+    // Optimistically add the new list
+    setLists(prevLists => [...prevLists, newList])
+  }
+
+  const handleListUpdated = (listId: string, updates: Partial<List['metadata']>) => {
+    // Optimistically update the list
+    setLists(prevLists => 
+      prevLists.map(list => 
+        list.id === listId 
+          ? { 
+              ...list, 
+              title: updates.name || list.title,
+              metadata: { ...list.metadata, ...updates } 
+            } 
+          : list
+      )
+    )
+    
+    // Update current list if it was the one edited
+    if (currentList?.id === listId) {
+      setCurrentList(prev => prev ? {
+        ...prev,
+        title: updates.name || prev.title,
+        metadata: { ...prev.metadata, ...updates }
+      } : undefined)
+    }
+  }
+
   const handleListDeleted = (listId: string) => {
     // Find the list being deleted to check if we need to redirect
     const deletedList = lists.find(l => l.id === listId)
@@ -66,6 +95,8 @@ export default function ClientMobileHeader({ currentListSlug }: ClientMobileHead
       lists={lists} 
       currentList={currentList} 
       onListDeleted={handleListDeleted}
+      onListCreated={handleListCreated}
+      onListUpdated={handleListUpdated}
     />
   )
 }
