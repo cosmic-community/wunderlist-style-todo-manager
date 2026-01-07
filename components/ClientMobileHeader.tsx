@@ -7,9 +7,10 @@ import MobileHeader from '@/components/MobileHeader'
 
 interface ClientMobileHeaderProps {
   currentListSlug?: string
+  onListChange?: (slug?: string) => void // Changed: Add callback for list changes
 }
 
-export default function ClientMobileHeader({ currentListSlug }: ClientMobileHeaderProps) {
+export default function ClientMobileHeader({ currentListSlug, onListChange }: ClientMobileHeaderProps) {
   const [lists, setLists] = useState<List[]>([])
   const [currentList, setCurrentList] = useState<List | undefined>(undefined)
   const router = useRouter()
@@ -30,6 +31,8 @@ export default function ClientMobileHeader({ currentListSlug }: ClientMobileHead
         if (currentListSlug) {
           const found = filteredLists.find((l: List) => l.slug === currentListSlug)
           setCurrentList(found)
+        } else {
+          setCurrentList(undefined)
         }
       }
     } catch (error) {
@@ -87,6 +90,23 @@ export default function ClientMobileHeader({ currentListSlug }: ClientMobileHead
     // Clear current list if it was deleted
     if (deletedList && deletedList.slug === currentListSlug) {
       setCurrentList(undefined)
+      if (onListChange) {
+        onListChange(undefined)
+      }
+    }
+  }
+
+  // Changed: Handle list navigation without page refresh
+  const handleListClick = (slug?: string) => {
+    if (onListChange) {
+      onListChange(slug)
+    } else {
+      // Fallback to router navigation if no callback provided
+      if (slug) {
+        router.push(`/lists/${slug}`)
+      } else {
+        router.push('/')
+      }
     }
   }
 
@@ -97,6 +117,7 @@ export default function ClientMobileHeader({ currentListSlug }: ClientMobileHead
       onListDeleted={handleListDeleted}
       onListCreated={handleListCreated}
       onListUpdated={handleListUpdated}
+      onListClick={handleListClick}
     />
   )
 }

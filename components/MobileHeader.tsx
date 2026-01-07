@@ -13,6 +13,7 @@ interface MobileHeaderProps {
   onListDeleted?: (listId: string) => void
   onListCreated?: (list: List) => void
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
+  onListClick?: (slug?: string) => void // Changed: Add navigation handler
 }
 
 const PRESET_COLORS = [
@@ -26,7 +27,7 @@ const PRESET_COLORS = [
   '#84cc16', // Lime
 ]
 
-export default function MobileHeader({ lists, currentList, onListDeleted, onListCreated, onListUpdated }: MobileHeaderProps) {
+export default function MobileHeader({ lists, currentList, onListDeleted, onListCreated, onListUpdated, onListClick }: MobileHeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [listToDelete, setListToDelete] = useState<List | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -69,7 +70,11 @@ export default function MobileHeader({ lists, currentList, onListDeleted, onList
     
     // Redirect if we deleted the current list
     if (wasCurrentList) {
-      router.replace('/')
+      if (onListClick) {
+        onListClick(undefined)
+      } else {
+        router.replace('/')
+      }
     }
     
     // Send to server in background
@@ -189,6 +194,15 @@ export default function MobileHeader({ lists, currentList, onListDeleted, onList
     setEditDescription('')
     setEditColor('#3b82f6')
   }
+
+  // Changed: Handle list navigation without page refresh
+  const handleListNavigation = (e: React.MouseEvent, slug?: string) => {
+    e.preventDefault()
+    setIsMenuOpen(false)
+    if (onListClick) {
+      onListClick(slug)
+    }
+  }
   
   return (
     <>
@@ -222,10 +236,10 @@ export default function MobileHeader({ lists, currentList, onListDeleted, onList
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 space-y-1">
-              <Link
-                href="/"
-                onClick={() => setIsMenuOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+              {/* Changed: Use button with client-side navigation */}
+              <button
+                onClick={(e) => handleListNavigation(e, undefined)}
+                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   !currentList
                     ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -233,7 +247,7 @@ export default function MobileHeader({ lists, currentList, onListDeleted, onList
               >
                 <ListTodo className="w-5 h-5" />
                 <span className="font-medium">All Tasks</span>
-              </Link>
+              </button>
               
               {lists.length > 0 && (
                 <>
@@ -252,9 +266,9 @@ export default function MobileHeader({ lists, currentList, onListDeleted, onList
                           : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                       }`}
                     >
-                      <Link
-                        href={`/lists/${list.slug}`}
-                        onClick={() => setIsMenuOpen(false)}
+                      {/* Changed: Use button with client-side navigation */}
+                      <button
+                        onClick={(e) => handleListNavigation(e, list.slug)}
                         className={`flex-1 flex items-center gap-3 px-3 py-2 ${
                           currentList?.slug === list.slug
                             ? 'text-blue-600 dark:text-blue-400'
@@ -265,8 +279,8 @@ export default function MobileHeader({ lists, currentList, onListDeleted, onList
                           className="w-4 h-4 rounded-full flex-shrink-0"
                           style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
                         />
-                        <span className="font-medium truncate">{list.title}</span>
-                      </Link>
+                        <span className="font-medium truncate text-left">{list.title}</span>
+                      </button>
                       
                       {/* Edit button for list */}
                       <button

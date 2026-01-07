@@ -15,9 +15,10 @@ interface SidebarProps {
   onListReplaced?: (tempId: string, realList: List) => void
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
   onListDeleted?: (listId: string) => void
+  onListClick?: (slug?: string) => void // Changed: Add navigation handler
 }
 
-export default function Sidebar({ lists, currentListSlug, onListCreated, onListReplaced, onListUpdated, onListDeleted }: SidebarProps) {
+export default function Sidebar({ lists, currentListSlug, onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
   const [editingList, setEditingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -86,6 +87,14 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListR
     })
   }
 
+  // Changed: Handle list navigation without page refresh
+  const handleListNavigation = (e: React.MouseEvent, slug?: string) => {
+    e.preventDefault()
+    if (onListClick) {
+      onListClick(slug)
+    }
+  }
+
   return (
     <>
       <aside className="hidden md:flex md:flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
@@ -99,9 +108,10 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListR
           </div>
           
           <nav className="space-y-1">
-            <Link
-              href="/"
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+            {/* Changed: Use button with client-side navigation */}
+            <button
+              onClick={(e) => handleListNavigation(e, undefined)}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                 !currentListSlug
                   ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -109,7 +119,7 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListR
             >
               <ListTodo className="w-5 h-5" />
               <span className="font-medium">All Tasks</span>
-            </Link>
+            </button>
             
             {lists.length > 0 && (
               <>
@@ -121,9 +131,10 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListR
                 
                 {lists.map((list) => (
                   <div key={list.id} className="relative group">
-                    <Link
-                      href={`/lists/${list.slug}`}
-                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                    {/* Changed: Use button with client-side navigation */}
+                    <button
+                      onClick={(e) => handleListNavigation(e, list.slug)}
+                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                         currentListSlug === list.slug
                           ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
                           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
@@ -133,7 +144,7 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListR
                         className="w-4 h-4 rounded-full flex-shrink-0"
                         style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
                       />
-                      <span className="font-medium flex-1 truncate">{list.title}</span>
+                      <span className="font-medium flex-1 truncate text-left">{list.title}</span>
                       
                       {/* More options button */}
                       <button
@@ -143,7 +154,7 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListR
                       >
                         <MoreHorizontal className="w-4 h-4" />
                       </button>
-                    </Link>
+                    </button>
                     
                     {/* Dropdown menu */}
                     {openMenuId === list.id && (

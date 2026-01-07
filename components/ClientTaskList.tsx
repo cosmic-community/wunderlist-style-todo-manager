@@ -15,6 +15,7 @@ export default function ClientTaskList({ listSlug }: ClientTaskListProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Changed: Fetch data when listSlug changes
   useEffect(() => {
     async function fetchData() {
       try {

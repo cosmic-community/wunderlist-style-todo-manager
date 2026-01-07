@@ -1,17 +1,19 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { List } from '@/types'
 import Sidebar from '@/components/Sidebar'
 
 interface ClientSidebarProps {
   currentListSlug?: string
+  onListChange?: (slug?: string) => void // Changed: Add callback for list changes
 }
 
-export default function ClientSidebar({ currentListSlug }: ClientSidebarProps) {
+export default function ClientSidebar({ currentListSlug, onListChange }: ClientSidebarProps) {
   const [lists, setLists] = useState<List[]>([])
   const router = useRouter()
+  const pathname = usePathname()
   // Track deleted list IDs to prevent them from reappearing on fetch
   const deletedListIds = useRef<Set<string>>(new Set())
 
@@ -91,9 +93,26 @@ export default function ClientSidebar({ currentListSlug }: ClientSidebarProps) {
     setLists(prevLists => prevLists.filter(list => list.id !== listId))
     
     // If we're currently viewing the deleted list, redirect to home
-    // Use replace instead of push to avoid navigation history issues
     if (deletedList && deletedList.slug === currentListSlug) {
-      router.replace('/')
+      if (onListChange) {
+        onListChange(undefined)
+      } else {
+        router.replace('/')
+      }
+    }
+  }
+
+  // Changed: Handle list navigation without page refresh
+  const handleListClick = (slug?: string) => {
+    if (onListChange) {
+      onListChange(slug)
+    } else {
+      // Fallback to router navigation if no callback provided
+      if (slug) {
+        router.push(`/lists/${slug}`)
+      } else {
+        router.push('/')
+      }
     }
   }
 
@@ -105,6 +124,7 @@ export default function ClientSidebar({ currentListSlug }: ClientSidebarProps) {
       onListReplaced={handleListReplaced}
       onListUpdated={handleListUpdated}
       onListDeleted={handleListDeleted}
+      onListClick={handleListClick}
     />
   )
 }
