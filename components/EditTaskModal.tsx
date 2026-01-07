@@ -39,6 +39,8 @@ export default function EditTaskModal({ task, lists, onClose }: EditTaskModalPro
         })
         
         if (response.ok) {
+          // Wait a bit for the API to settle before refreshing
+          await new Promise(resolve => setTimeout(resolve, 150))
           router.refresh()
         } else {
           alert('Failed to update task. Please try again.')

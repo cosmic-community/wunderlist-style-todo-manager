@@ -39,6 +39,8 @@ export default function TaskCard({ task, lists }: TaskCardProps) {
       })
       
       if (response.ok) {
+        // Wait a bit longer for the API to settle before refreshing
+        await new Promise(resolve => setTimeout(resolve, 150))
         // Refresh to get latest data from server
         router.refresh()
       } else {
@@ -62,6 +64,8 @@ export default function TaskCard({ task, lists }: TaskCardProps) {
       })
       
       if (response.ok) {
+        // Wait a bit for the API to settle before refreshing
+        await new Promise(resolve => setTimeout(resolve, 150))
         router.refresh()
       }
     } catch (error) {

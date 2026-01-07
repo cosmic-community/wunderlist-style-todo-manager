@@ -44,6 +44,9 @@ export async function PATCH(
       metadata: updateData
     })
     
+    // Add small delay to allow Cosmic API to propagate changes
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     revalidatePath('/')
     revalidatePath('/lists/[slug]')
     
@@ -65,6 +68,9 @@ export async function DELETE(
     const { id } = await params
     
     await cosmic.objects.deleteOne(id)
+    
+    // Add small delay to allow Cosmic API to propagate changes
+    await new Promise(resolve => setTimeout(resolve, 100))
     
     revalidatePath('/')
     revalidatePath('/lists/[slug]')

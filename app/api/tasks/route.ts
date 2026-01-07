@@ -19,6 +19,9 @@ export async function POST(request: Request) {
       }
     })
     
+    // Add small delay to allow Cosmic API to propagate changes
+    await new Promise(resolve => setTimeout(resolve, 100))
+    
     revalidatePath('/')
     revalidatePath('/lists/[slug]')
     

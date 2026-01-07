@@ -54,6 +54,8 @@ export default function AddTaskForm({ lists, listSlug }: AddTaskFormProps) {
         })
         
         if (response.ok) {
+          // Wait a bit for the API to settle before refreshing
+          await new Promise(resolve => setTimeout(resolve, 150))
           router.refresh()
         } else {
           // Restore form data on failure
