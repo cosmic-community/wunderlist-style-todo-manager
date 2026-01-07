@@ -4,7 +4,7 @@ export interface CosmicObject {
   slug: string;
   title: string;
   content?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   type: string;
   created_at: string;
   modified_at: string;
@@ -30,6 +30,7 @@ export interface Task extends CosmicObject {
     title: string;
     description?: string;
     completed: boolean;
+    starred?: boolean;
     priority?: {
       key: TaskPriority;
       value: string;
@@ -60,6 +61,7 @@ export interface UpdateTaskData {
   title?: string;
   description?: string;
   completed?: boolean;
+  starred?: boolean;
   priority?: TaskPriority;
   due_date?: string;
   list?: string;

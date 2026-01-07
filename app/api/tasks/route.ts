@@ -13,13 +13,14 @@ export async function POST(request: Request) {
         title: data.title,
         description: data.description || '',
         completed: false,
+        starred: false,
         priority: data.priority ? { key: data.priority, value: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) } : { key: 'medium', value: 'Medium' },
         due_date: data.due_date || '',
         list: data.list || ''
       }
     })
     
-    // Revalidate immediately - no delay needed with optimistic UI
+    // Revalidate in background
     revalidatePath('/')
     revalidatePath('/lists/[slug]')
     

@@ -17,6 +17,10 @@ export async function PATCH(
       updateData.completed = data.completed
     }
     
+    if (data.starred !== undefined) {
+      updateData.starred = data.starred
+    }
+    
     if (data.title !== undefined) {
       updateData.title = data.title
     }
@@ -44,7 +48,7 @@ export async function PATCH(
       metadata: updateData
     })
     
-    // Revalidate immediately - no delay needed with optimistic UI
+    // Revalidate in background
     revalidatePath('/')
     revalidatePath('/lists/[slug]')
     
@@ -67,7 +71,7 @@ export async function DELETE(
     
     await cosmic.objects.deleteOne(id)
     
-    // Revalidate immediately - no delay needed with optimistic UI
+    // Revalidate in background
     revalidatePath('/')
     revalidatePath('/lists/[slug]')
     
