@@ -23,6 +23,13 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     }
   }, [])
   
+  // Changed: Re-focus input whenever title is cleared (after submission)
+  useEffect(() => {
+    if (title === '' && !isSubmitting && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [title, isSubmitting])
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() || isSubmitting) return
@@ -50,12 +57,6 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     // Reset form immediately
     const taskTitle = title
     setTitle('')
-    
-    // Changed: Keep focus on input after clearing - no blur/expand logic needed
-    // Input stays visible and focused for rapid task entry
-    if (inputRef.current) {
-      inputRef.current.focus()
-    }
     
     // Send to server in background
     try {
