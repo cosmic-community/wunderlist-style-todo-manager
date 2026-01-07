@@ -85,7 +85,7 @@ export default function Sidebar({ lists, currentListSlug, onListCreated, onListU
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <CheckSquare className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Todo Manager</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Todos</h2>
             </div>
             <ThemeToggle />
           </div>
