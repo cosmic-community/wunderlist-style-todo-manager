@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Task, List } from '@/types'
 import { Trash2 } from 'lucide-react'
+import EditTaskModal from '@/components/EditTaskModal'
 
 interface TaskCardProps {
   task: Task
@@ -33,8 +34,10 @@ function ConfettiParticle({ delay, color, index }: { delay: number; color: strin
 
 export default function TaskCard({ 
   task, 
+  lists,
   onOptimisticToggle,
   onOptimisticDelete,
+  onOptimisticUpdate,
   onSyncComplete
 }: TaskCardProps) {
   const [isUpdating, setIsUpdating] = useState(false)
@@ -43,6 +46,8 @@ export default function TaskCard({
   const [isCollapsing, setIsCollapsing] = useState(false)
   // Changed: Track if fully collapsed for smooth removal
   const [isFullyCollapsed, setIsFullyCollapsed] = useState(false)
+  // Changed: Add state for edit modal
+  const [showEditModal, setShowEditModal] = useState(false)
   const cardRef = useRef<HTMLDivElement>(null)
   
   // Changed: Track previous completed state with ref to detect transitions
@@ -133,6 +138,11 @@ export default function TaskCard({
     }
   }
   
+  // Changed: Handler for clicking the card area (not the checkbox)
+  const handleCardClick = () => {
+    setShowEditModal(true)
+  }
+  
   // Changed: More vibrant confetti colors
   const confettiColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']
   
@@ -142,88 +152,102 @@ export default function TaskCard({
   }
   
   return (
-    // Changed: Smoother transition with grid-based height animation for collapse
-    <div 
-      ref={cardRef}
-      className={`grid transition-all duration-500 ease-out ${
-        isCollapsing 
-          ? 'grid-rows-[0fr] opacity-0' 
-          : 'grid-rows-[1fr] opacity-100'
-      }`}
-    >
-      <div className="overflow-hidden">
-        <div className="relative">
-          {/* Changed: Enhanced confetti celebration overlay */}
-          {showCelebration && (
-            <div className="absolute inset-0 overflow-visible pointer-events-none z-20">
-              {confettiColors.map((color, i) => (
-                <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} />
-              ))}
-              {confettiColors.map((color, i) => (
-                <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + 3} />
-              ))}
-              {confettiColors.slice(0, 4).map((color, i) => (
-                <ConfettiParticle key={`c-${i}`} delay={i * 25 + 120} color={color} index={i + 6} />
-              ))}
-            </div>
-          )}
-          
-          <div 
-            className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 ${
-              isCollapsing ? 'scale-98 -translate-y-1' : ''
-            }`}
-            style={{
-              // Changed: Add margin-bottom that transitions to 0 for smoother collapse
-              marginBottom: isCollapsing ? '-8px' : '0px',
-              transition: 'all 500ms cubic-bezier(0.4, 0, 0.2, 1)'
-            }}
-            onClick={handleToggleComplete}
-          >
-            {/* Checkbox */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                handleToggleComplete()
+    <>
+      {/* Changed: Smoother transition with grid-based height animation for collapse */}
+      <div 
+        ref={cardRef}
+        className={`grid transition-all duration-500 ease-out ${
+          isCollapsing 
+            ? 'grid-rows-[0fr] opacity-0' 
+            : 'grid-rows-[1fr] opacity-100'
+        }`}
+      >
+        <div className="overflow-hidden">
+          <div className="relative">
+            <div 
+              className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 ${
+                isCollapsing ? 'scale-98 -translate-y-1' : ''
+              }`}
+              style={{
+                // Changed: Add margin-bottom that transitions to 0 for smoother collapse
+                marginBottom: isCollapsing ? '-8px' : '0px',
+                transition: 'all 500ms cubic-bezier(0.4, 0, 0.2, 1)'
               }}
-              className="flex-shrink-0"
-              aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
-              disabled={isUpdating}
+              onClick={handleCardClick}
             >
-              {/* Changed: Smoother checkbox animation with better easing */}
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
-                task.metadata.completed
-                  ? 'bg-blue-600 border-blue-600'
-                  : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
-              } ${showCelebration ? 'scale-110 ring-4 ring-blue-200/50 dark:ring-blue-900/50' : ''}`}>
-                {task.metadata.completed && (
-                  <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                    <path d="M5 13l4 4L19 7"></path>
-                  </svg>
+              {/* Changed: Checkbox with confetti positioned around it */}
+              <div className="relative flex-shrink-0">
+                {/* Changed: Confetti celebration positioned around checkbox only */}
+                {showCelebration && (
+                  <div className="absolute inset-0 overflow-visible pointer-events-none z-20" style={{ left: '-50%', right: '-50%', top: '-50%', bottom: '-50%' }}>
+                    {confettiColors.map((color, i) => (
+                      <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} />
+                    ))}
+                    {confettiColors.map((color, i) => (
+                      <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + 3} />
+                    ))}
+                    {confettiColors.slice(0, 4).map((color, i) => (
+                      <ConfettiParticle key={`c-${i}`} delay={i * 25 + 120} color={color} index={i + 6} />
+                    ))}
+                  </div>
                 )}
+                
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleToggleComplete()
+                  }}
+                  className="relative z-10"
+                  aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
+                  disabled={isUpdating}
+                >
+                  {/* Changed: Smoother checkbox animation with better easing */}
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
+                    task.metadata.completed
+                      ? 'bg-blue-600 border-blue-600'
+                      : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+                  } ${showCelebration ? 'scale-110 ring-4 ring-blue-200/50 dark:ring-blue-900/50' : ''}`}>
+                    {task.metadata.completed && (
+                      <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    )}
+                  </div>
+                </button>
               </div>
-            </button>
-            
-            {/* Title */}
-            <span className={`flex-1 text-base transition-all duration-300 ease-out ${
-              task.metadata.completed ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-white'
-            }`}>
-              {task.metadata.title}
-            </span>
-            
-            {/* Delete button - only show for completed tasks that aren't celebrating */}
-            {task.metadata.completed && !showCelebration && (
-              <button
-                onClick={handleDelete}
-                className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                aria-label="Delete task"
-                disabled={isDeleting}
-              >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            )}
+              
+              {/* Title */}
+              <span className={`flex-1 text-base transition-all duration-300 ease-out ${
+                task.metadata.completed ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-white'
+              }`}>
+                {task.metadata.title}
+              </span>
+              
+              {/* Delete button - only show for completed tasks that aren't celebrating */}
+              {task.metadata.completed && !showCelebration && (
+                <button
+                  onClick={handleDelete}
+                  className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  aria-label="Delete task"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+      
+      {/* Changed: Edit modal */}
+      {showEditModal && (
+        <EditTaskModal
+          task={task}
+          lists={lists}
+          onClose={() => setShowEditModal(false)}
+          onOptimisticUpdate={onOptimisticUpdate}
+        />
+      )}
+    </>
   )
 }
