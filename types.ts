@@ -73,3 +73,9 @@ export interface CreateListData {
   description?: string;
   color?: string;
 }
+
+export interface UpdateListData {
+  name?: string;
+  description?: string;
+  color?: string;
+}
