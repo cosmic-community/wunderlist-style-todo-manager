@@ -9,11 +9,13 @@ interface TaskCardProps {
   onOptimisticToggle: (taskId: string) => void
   onOptimisticDelete: (taskId: string) => void
   onOptimisticUpdate: (taskId: string, updates: Partial<Task['metadata']>) => void
+  onSyncComplete?: (taskId: string) => void
 }
 
 export default function TaskCard({ 
   task, 
-  onOptimisticToggle
+  onOptimisticToggle,
+  onSyncComplete
 }: TaskCardProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   
@@ -26,11 +28,16 @@ export default function TaskCard({
     
     // Background sync with server
     try {
-      await fetch(`/api/tasks/${task.id}`, {
+      const response = await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ completed: !task.metadata.completed })
       })
+      
+      if (response.ok && onSyncComplete) {
+        // Server confirmed the change, clear pending state
+        onSyncComplete(task.id)
+      }
     } catch (error) {
       console.error('Error toggling task:', error)
       // Revert on error

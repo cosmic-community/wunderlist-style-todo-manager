@@ -12,13 +12,21 @@ interface TaskListProps {
   listSlug?: string
 }
 
+// Track pending state changes for a task
+interface PendingTaskState {
+  completed?: boolean
+  // Add other fields here as needed for other optimistic updates
+}
+
 export default function TaskList({ initialTasks, lists, listSlug }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const [isLoading, setIsLoading] = useState(false)
   const mountedRef = useRef(true)
-  // Track temporary task IDs to preserve optimistic updates
-  const pendingTasksRef = useRef<Set<string>>(new Set())
+  // Track temporary task IDs for newly added tasks
+  const pendingNewTasksRef = useRef<Set<string>>(new Set())
+  // Track pending state changes for existing tasks (keyed by task ID)
+  const pendingStateChangesRef = useRef<Map<string, PendingTaskState>>(new Map())
 
   // Fetch tasks from API
   const fetchTasks = useCallback(async () => {
@@ -36,30 +44,54 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
           )
         }
         
-        // Merge server tasks with pending optimistic tasks
-        // Keep optimistic tasks that aren't yet on the server
+        // Merge server tasks with pending optimistic state
         setTasks(prevTasks => {
-          const pendingTasks = prevTasks.filter(task => 
-            pendingTasksRef.current.has(task.id)
+          // Handle pending new tasks (tasks not yet on server)
+          const pendingNewTasks = prevTasks.filter(task => 
+            pendingNewTasksRef.current.has(task.id)
           )
           
-          // Check if any pending tasks now exist on server (by matching title)
+          // Check if any pending new tasks now exist on server (by matching title)
           const serverTaskTitles = new Set(filteredTasks.map(t => t.metadata.title))
           
-          // Remove pending tasks that are now on server
-          pendingTasks.forEach(pendingTask => {
+          // Remove pending new tasks that are now on server
+          pendingNewTasks.forEach(pendingTask => {
             if (serverTaskTitles.has(pendingTask.metadata.title)) {
-              pendingTasksRef.current.delete(pendingTask.id)
+              pendingNewTasksRef.current.delete(pendingTask.id)
             }
           })
           
-          // Keep only pending tasks not yet on server
-          const stillPendingTasks = pendingTasks.filter(task => 
-            pendingTasksRef.current.has(task.id)
+          // Keep only pending new tasks not yet on server
+          const stillPendingNewTasks = pendingNewTasks.filter(task => 
+            pendingNewTasksRef.current.has(task.id)
           )
           
-          // Combine: pending optimistic tasks first, then server tasks
-          return [...stillPendingTasks, ...filteredTasks]
+          // Apply pending state changes to server tasks
+          const tasksWithPendingState = filteredTasks.map(serverTask => {
+            const pendingState = pendingStateChangesRef.current.get(serverTask.id)
+            if (pendingState) {
+              // Check if server state now matches our optimistic state
+              // If so, clear the pending state
+              if (pendingState.completed !== undefined && 
+                  serverTask.metadata.completed === pendingState.completed) {
+                pendingStateChangesRef.current.delete(serverTask.id)
+                return serverTask
+              }
+              
+              // Server doesn't match yet, keep our optimistic state
+              return {
+                ...serverTask,
+                metadata: {
+                  ...serverTask.metadata,
+                  ...(pendingState.completed !== undefined && { completed: pendingState.completed })
+                }
+              }
+            }
+            return serverTask
+          })
+          
+          // Combine: pending new tasks first, then server tasks with applied pending state
+          return [...stillPendingNewTasks, ...tasksWithPendingState]
         })
       }
     } catch (error) {
@@ -82,36 +114,58 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
 
   // Handlers for optimistic updates
   const handleOptimisticAdd = useCallback((task: Task) => {
-    // Track this as a pending/optimistic task
-    pendingTasksRef.current.add(task.id)
+    // Track this as a pending/optimistic new task
+    pendingNewTasksRef.current.add(task.id)
     setTasks(prev => [task, ...prev])
     // Don't immediately fetch - let the polling handle it
     // This prevents the flicker where the task disappears then reappears
   }, [])
 
   const handleOptimisticToggle = useCallback((taskId: string) => {
-    setTasks(prev => prev.map(task => 
-      task.id === taskId 
-        ? { ...task, metadata: { ...task.metadata, completed: !task.metadata.completed } }
-        : task
-    ))
+    setTasks(prev => {
+      const task = prev.find(t => t.id === taskId)
+      if (task) {
+        // Track the new completed state as pending
+        const newCompletedState = !task.metadata.completed
+        pendingStateChangesRef.current.set(taskId, { completed: newCompletedState })
+      }
+      
+      return prev.map(task => 
+        task.id === taskId 
+          ? { ...task, metadata: { ...task.metadata, completed: !task.metadata.completed } }
+          : task
+      )
+    })
+    // Don't immediately fetch - let the polling handle it
+    // This prevents the flicker where the task reverts then updates
   }, [])
 
   const handleOptimisticDelete = useCallback((taskId: string) => {
-    // Also remove from pending if it was there
-    pendingTasksRef.current.delete(taskId)
+    // Remove from all pending tracking
+    pendingNewTasksRef.current.delete(taskId)
+    pendingStateChangesRef.current.delete(taskId)
     setTasks(prev => prev.filter(task => task.id !== taskId))
   }, [])
 
   const handleOptimisticUpdate = useCallback((taskId: string, updates: Partial<Task['metadata']>) => {
+    // Track completed state if it's being updated
+    if (updates.completed !== undefined) {
+      const currentPending = pendingStateChangesRef.current.get(taskId) || {}
+      pendingStateChangesRef.current.set(taskId, { ...currentPending, completed: updates.completed })
+    }
+    
     setTasks(prev => prev.map(task =>
       task.id === taskId
         ? { ...task, metadata: { ...task.metadata, ...updates } }
         : task
     ))
-    // Fetch fresh data after update
-    setTimeout(fetchTasks, 500)
-  }, [fetchTasks])
+    // Don't immediately fetch - let the polling handle it
+  }, [])
+
+  // Function to clear pending state for a task (called after successful server sync)
+  const clearPendingState = useCallback((taskId: string) => {
+    pendingStateChangesRef.current.delete(taskId)
+  }, [])
 
   const pendingTasks = tasks.filter(task => !task.metadata.completed)
   const completedTasks = tasks.filter(task => task.metadata.completed)
@@ -134,6 +188,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
           onOptimisticToggle={handleOptimisticToggle}
           onOptimisticDelete={handleOptimisticDelete}
           onOptimisticUpdate={handleOptimisticUpdate}
+          onSyncComplete={clearPendingState}
         />
       ))}
       
@@ -158,6 +213,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
                   onOptimisticToggle={handleOptimisticToggle}
                   onOptimisticDelete={handleOptimisticDelete}
                   onOptimisticUpdate={handleOptimisticUpdate}
+                  onSyncComplete={clearPendingState}
                 />
               ))}
             </div>
