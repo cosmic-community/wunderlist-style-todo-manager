@@ -20,21 +20,21 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
       },
-      // Changed: Updated animation with smoother timing
+      // Changed: Updated animation with circular pattern
       animation: {
         confetti: 'confetti 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
       },
       keyframes: {
         confetti: {
           '0%': {
-            transform: 'translateY(0) rotate(0deg) scale(1)',
+            transform: 'translate(-50%, -50%) rotate(0deg) translateX(0) scale(1)',
             opacity: '1',
           },
           '20%': {
             opacity: '1',
           },
           '100%': {
-            transform: 'translateY(-70px) rotate(540deg) scale(0.3)',
+            transform: 'translate(-50%, -50%) rotate(calc(var(--confetti-angle) + 180deg)) translateX(80px) scale(0.3)',
             opacity: '0',
           },
         },

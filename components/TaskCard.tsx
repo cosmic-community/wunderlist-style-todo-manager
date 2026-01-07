@@ -14,20 +14,21 @@ interface TaskCardProps {
   onSyncComplete?: (taskId: string) => void
 }
 
-// Changed: Improved confetti particle with smoother animation
-function ConfettiParticle({ delay, color, index }: { delay: number; color: string; index: number }) {
-  // Create varied horizontal positions based on index
-  const leftPosition = 20 + (index * 10) % 60
+// Changed: Improved confetti particle that radiates in a circle pattern
+function ConfettiParticle({ delay, color, index, total }: { delay: number; color: string; index: number; total: number }) {
+  // Calculate angle for circular distribution
+  const angle = (index / total) * 360
   
   return (
     <div
       className="absolute w-2 h-2 rounded-full animate-confetti pointer-events-none"
       style={{
         backgroundColor: color,
-        left: `${leftPosition}%`,
+        left: '50%',
         top: '50%',
         animationDelay: `${delay}ms`,
-      }}
+        '--confetti-angle': `${angle}deg`,
+      } as React.CSSProperties}
     />
   )
 }
@@ -175,19 +176,16 @@ export default function TaskCard({
               }}
               onClick={handleCardClick}
             >
-              {/* Changed: Checkbox with confetti positioned around it */}
-              <div className="relative flex-shrink-0">
-                {/* Changed: Confetti celebration positioned around checkbox only */}
+              {/* Changed: Checkbox with confetti positioned around it - no overflow hidden */}
+              <div className="relative flex-shrink-0 flex items-center">
+                {/* Changed: Confetti celebration that can extend outside task area */}
                 {showCelebration && (
-                  <div className="absolute inset-0 overflow-visible pointer-events-none z-20" style={{ left: '-50%', right: '-50%', top: '-50%', bottom: '-50%' }}>
+                  <div className="absolute inset-0 pointer-events-none z-20" style={{ overflow: 'visible' }}>
                     {confettiColors.map((color, i) => (
-                      <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} />
+                      <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
                     ))}
                     {confettiColors.map((color, i) => (
-                      <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + 3} />
-                    ))}
-                    {confettiColors.slice(0, 4).map((color, i) => (
-                      <ConfettiParticle key={`c-${i}`} delay={i * 25 + 120} color={color} index={i + 6} />
+                      <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
                     ))}
                   </div>
                 )}
@@ -201,7 +199,7 @@ export default function TaskCard({
                   aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
                   disabled={isUpdating}
                 >
-                  {/* Changed: Smoother checkbox animation with better easing */}
+                  {/* Changed: Circle with proper flex centering */}
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
                     task.metadata.completed
                       ? 'bg-blue-600 border-blue-600'

@@ -66,44 +66,22 @@
   }
 }
 
-/* Changed: Smoother confetti animation with natural easing curve */
+/* Changed: Circular confetti animation that radiates outward in all directions */
 @keyframes confetti {
   0% {
-    transform: translateY(0) translateX(0) rotate(0deg) scale(1);
+    transform: translate(-50%, -50%) rotate(0deg) translateX(0) scale(1);
     opacity: 1;
   }
   20% {
     opacity: 1;
   }
   100% {
-    transform: translateY(-70px) translateX(var(--confetti-x, 10px)) rotate(540deg) scale(0.3);
+    transform: translate(-50%, -50%) rotate(calc(var(--confetti-angle) + 180deg)) translateX(80px) scale(0.3);
     opacity: 0;
   }
 }
 
-/* Changed: Faster, smoother animation with ease-out for natural deceleration */
+/* Changed: Apply circular confetti animation */
 .animate-confetti {
-  --confetti-x: 10px;
   animation: confetti 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.animate-confetti:nth-child(odd) {
-  --confetti-x: -15px;
-}
-
-.animate-confetti:nth-child(3n) {
-  --confetti-x: 20px;
-}
-
-.animate-confetti:nth-child(4n) {
-  --confetti-x: -25px;
-}
-
-/* Changed: Additional confetti variation for more organic feel */
-.animate-confetti:nth-child(5n) {
-  --confetti-x: 8px;
-}
-
-.animate-confetti:nth-child(6n) {
-  --confetti-x: -12px;
 }
