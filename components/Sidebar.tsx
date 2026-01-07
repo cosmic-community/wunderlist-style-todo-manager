@@ -4,13 +4,21 @@ import Link from 'next/link'
 import { List } from '@/types'
 import { CheckSquare, ListTodo } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
+import CreateListForm from './CreateListForm'
 
 interface SidebarProps {
   lists: List[]
   currentListSlug?: string
+  onListCreated?: (list: List) => void
 }
 
-export default function Sidebar({ lists, currentListSlug }: SidebarProps) {
+export default function Sidebar({ lists, currentListSlug, onListCreated }: SidebarProps) {
+  const handleListCreated = (list: List) => {
+    if (onListCreated) {
+      onListCreated(list)
+    }
+  }
+
   return (
     <aside className="hidden md:flex md:flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
       <div className="p-6">
@@ -62,6 +70,11 @@ export default function Sidebar({ lists, currentListSlug }: SidebarProps) {
               ))}
             </>
           )}
+
+          {/* Create List Form */}
+          <div className="pt-4">
+            <CreateListForm onListCreated={handleListCreated} />
+          </div>
         </nav>
       </div>
     </aside>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { List } from '@/types'
 import Sidebar from '@/components/Sidebar'
 
@@ -11,25 +11,36 @@ interface ClientSidebarProps {
 export default function ClientSidebar({ currentListSlug }: ClientSidebarProps) {
   const [lists, setLists] = useState<List[]>([])
 
-  useEffect(() => {
-    async function fetchLists() {
-      try {
-        const response = await fetch('/api/lists')
-        if (response.ok) {
-          const data = await response.json()
-          setLists(data.lists)
-        }
-      } catch (error) {
-        console.error('Error fetching lists:', error)
+  const fetchLists = useCallback(async () => {
+    try {
+      const response = await fetch('/api/lists')
+      if (response.ok) {
+        const data = await response.json()
+        setLists(data.lists)
       }
+    } catch (error) {
+      console.error('Error fetching lists:', error)
     }
+  }, [])
 
+  useEffect(() => {
     fetchLists()
     
     // Poll for list updates
     const interval = setInterval(fetchLists, 5000)
     return () => clearInterval(interval)
-  }, [])
+  }, [fetchLists])
 
-  return <Sidebar lists={lists} currentListSlug={currentListSlug} />
+  const handleListCreated = (newList: List) => {
+    // Optimistically add the new list
+    setLists(prevLists => [...prevLists, newList])
+  }
+
+  return (
+    <Sidebar 
+      lists={lists} 
+      currentListSlug={currentListSlug} 
+      onListCreated={handleListCreated}
+    />
+  )
 }

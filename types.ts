@@ -66,3 +66,10 @@ export interface UpdateTaskData {
   due_date?: string;
   list?: string;
 }
+
+// List form data types
+export interface CreateListData {
+  name: string;
+  description?: string;
+  color?: string;
+}

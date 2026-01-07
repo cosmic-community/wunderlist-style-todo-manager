@@ -45,6 +45,24 @@ export async function getLists(): Promise<List[]> {
   }
 }
 
+// Create a new list
+export async function createList(data: { name: string; description?: string; color?: string }): Promise<List> {
+  const slug = data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  
+  const response = await cosmic.objects.insertOne({
+    title: data.name.trim(),
+    slug: slug,
+    type: 'lists',
+    metadata: {
+      name: data.name.trim(),
+      description: data.description?.trim() || '',
+      color: data.color || '#3b82f6'
+    }
+  })
+  
+  return response.object as List
+}
+
 // Fetch single task by ID
 export async function getTaskById(id: string): Promise<Task | null> {
   try {
