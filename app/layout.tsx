@@ -14,7 +14,7 @@ export const metadata: Metadata = {
     description: 'A Wunderlist style todo list app powered by Cosmic',
     images: [
       {
-        url: 'https://imgix.cosmicjs.com/25c3c790-ec03-11f0-8092-4592c74830bf-image.png',
+        url: 'https://imgix.cosmicjs.com/839fb980-ec05-11f0-8092-4592c74830bf-cosmic-todo.jpeg',
         width: 1200,
         height: 630,
         alt: 'Cosmic Todo',
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Cosmic Todo',
     description: 'A Wunderlist style todo list app powered by Cosmic',
-    images: ['https://imgix.cosmicjs.com/25c3c790-ec03-11f0-8092-4592c74830bf-image.png'],
+    images: ['https://imgix.cosmicjs.com/839fb980-ec05-11f0-8092-4592c74830bf-cosmic-todo.jpeg'],
   },
   icons: {
     icon: [
