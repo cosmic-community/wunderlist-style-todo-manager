@@ -40,7 +40,10 @@ export default function TaskCard({
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
-  const [isFadingOut, setIsFadingOut] = useState(false)
+  const [isCollapsing, setIsCollapsing] = useState(false)
+  // Changed: Track the actual height for smooth collapse
+  const [cardHeight, setCardHeight] = useState<number | 'auto'>('auto')
+  const cardRef = useRef<HTMLDivElement>(null)
   
   // Changed: Track previous completed state with ref to detect transitions
   const prevCompletedRef = useRef(task.metadata.completed)
@@ -50,18 +53,29 @@ export default function TaskCard({
     if (!prevCompletedRef.current && task.metadata.completed) {
       setShowCelebration(true)
       
-      // Changed: Smoother timing - start fade out after confetti peaks (400ms)
-      const fadeTimer = setTimeout(() => {
-        setIsFadingOut(true)
+      // Changed: Capture the current height before collapsing
+      if (cardRef.current) {
+        setCardHeight(cardRef.current.offsetHeight)
+      }
+      
+      // Changed: Start collapse after confetti peaks (400ms)
+      const collapseTimer = setTimeout(() => {
+        setIsCollapsing(true)
+        // Changed: Animate to zero height
+        requestAnimationFrame(() => {
+          setCardHeight(0)
+        })
       }, 400)
       
-      // Changed: Hide celebration after fade completes (800ms total)
+      // Changed: Hide celebration after collapse completes (900ms total)
       const hideTimer = setTimeout(() => {
         setShowCelebration(false)
-      }, 800)
+        setIsCollapsing(false)
+        setCardHeight('auto')
+      }, 900)
       
       return () => {
-        clearTimeout(fadeTimer)
+        clearTimeout(collapseTimer)
         clearTimeout(hideTimer)
       }
     }
@@ -126,12 +140,22 @@ export default function TaskCard({
   const confettiColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']
   
   return (
-    // Changed: Smoother transition with better easing - using ease-in-out for natural feel
-    <div className={`relative transition-all duration-500 ease-in-out ${
-      isFadingOut && task.metadata.completed 
-        ? 'opacity-0 scale-98 -translate-y-1 max-h-0 py-0 my-0 overflow-hidden' 
-        : 'opacity-100 scale-100 translate-y-0 max-h-20'
-    }`}>
+    // Changed: Smoother transition with explicit height animation for collapse
+    <div 
+      ref={cardRef}
+      className={`relative transition-all duration-500 ease-out overflow-hidden ${
+        isCollapsing 
+          ? 'opacity-0 scale-98 -translate-y-1' 
+          : 'opacity-100 scale-100 translate-y-0'
+      }`}
+      style={{
+        // Changed: Use explicit height for smooth collapse, 'auto' when not collapsing
+        height: cardHeight === 'auto' ? 'auto' : cardHeight,
+        marginBottom: isCollapsing ? 0 : undefined,
+        paddingTop: isCollapsing ? 0 : undefined,
+        paddingBottom: isCollapsing ? 0 : undefined,
+      }}
+    >
       {/* Changed: Enhanced confetti celebration overlay */}
       {showCelebration && (
         <div className="absolute inset-0 overflow-visible pointer-events-none z-20">
