@@ -2,12 +2,15 @@
 
 import Link from 'next/link'
 import { List } from '@/types'
-import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
+import UserMenu from './UserMenu'
+import InviteModal from './InviteModal'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface SidebarProps {
   lists: List[]
@@ -22,8 +25,10 @@ interface SidebarProps {
 
 export default function Sidebar({ lists, currentListSlug, isLoading = false, onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
   const [editingList, setEditingList] = useState<List | null>(null)
+  const [invitingList, setInvitingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const { isAuthenticated } = useAuth()
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -75,6 +80,13 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
     setEditingList(list)
   }
 
+  const handleInviteClick = (e: React.MouseEvent, list: List) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setOpenMenuId(null)
+    setInvitingList(list)
+  }
+
   const handleDeleteClick = (e: React.MouseEvent, listId: string) => {
     e.preventDefault()
     e.stopPropagation()
@@ -108,6 +120,13 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
             </div>
             <ThemeToggle />
           </div>
+          
+          {/* User Menu */}
+          {isAuthenticated && (
+            <div className="mb-4 -mx-3">
+              <UserMenu />
+            </div>
+          )}
           
           <nav className="space-y-1">
             {/* Changed: Use button with client-side navigation */}
@@ -174,6 +193,13 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
                         className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
                       >
                         <button
+                          onClick={(e) => handleInviteClick(e, list)}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          Invite
+                        </button>
+                        <button
                           onClick={(e) => handleEditClick(e, list)}
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                         >
@@ -195,12 +221,14 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
             )}
 
             {/* Create List Form */}
-            <div className="pt-4">
-              <CreateListForm 
-                onListCreated={handleListCreated}
-                onListReplaced={handleListReplaced}
-              />
-            </div>
+            {isAuthenticated && (
+              <div className="pt-4">
+                <CreateListForm 
+                  onListCreated={handleListCreated}
+                  onListReplaced={handleListReplaced}
+                />
+              </div>
+            )}
           </nav>
         </div>
       </aside>
@@ -212,6 +240,15 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
           onClose={() => setEditingList(null)}
           onOptimisticUpdate={handleOptimisticUpdate}
           onOptimisticDelete={handleOptimisticDelete}
+        />
+      )}
+
+      {/* Invite Modal */}
+      {invitingList && (
+        <InviteModal
+          listId={invitingList.id}
+          listName={invitingList.metadata.name}
+          onClose={() => setInvitingList(null)}
         />
       )}
     </>

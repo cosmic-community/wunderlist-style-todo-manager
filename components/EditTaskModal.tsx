@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { Task, List, TaskPriority } from '@/types'
+import { useState } from 'react'
 import { X } from 'lucide-react'
+import type { Task, List, TaskPriority } from '@/types'
 
 interface EditTaskModalProps {
   task: Task
@@ -12,191 +12,160 @@ interface EditTaskModalProps {
 }
 
 export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate }: EditTaskModalProps) {
-  const [formData, setFormData] = useState({
-    title: task.metadata.title,
-    description: task.metadata.description || '',
-    priority: task.metadata.priority?.key || 'medium',
-    due_date: task.metadata.due_date || '',
-    list: task.metadata.list?.id || ''
-  })
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const modalRef = useRef<HTMLDivElement>(null)
-  // Changed: Add ref for title input to enable auto-focus
-  const titleInputRef = useRef<HTMLInputElement>(null)
-  
-  // Changed: Add auto-focus effect for title input
-  useEffect(() => {
-    if (titleInputRef.current) {
-      titleInputRef.current.focus()
-      titleInputRef.current.select()
-    }
-  }, [])
-  
-  // Changed: Add escape key handler
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose()
-      }
-    }
-    
-    document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
-  }, [onClose])
-  
-  // Changed: Add click outside handler
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
-      onClose()
-    }
-  }
-  
+  const [title, setTitle] = useState(task.metadata.title)
+  const [description, setDescription] = useState(task.metadata.description || '')
+  const [priority, setPriority] = useState<TaskPriority>(task.metadata.priority?.key || 'medium')
+  const [dueDate, setDueDate] = useState(task.metadata.due_date || '')
+  const [listId, setListId] = useState(
+    task.metadata.list && typeof task.metadata.list === 'object' 
+      ? task.metadata.list.id 
+      : task.metadata.list || ''
+  )
+  const [isLoading, setIsLoading] = useState(false)
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.title.trim() || isSubmitting) return
-    
-    setIsSubmitting(true)
-    
-    const selectedList = formData.list 
-      ? lists.find(l => l.id === formData.list) 
-      : undefined
-    
-    // Build optimistic updates
-    const optimisticUpdates: Partial<Task['metadata']> = {
-      title: formData.title,
-      description: formData.description || undefined,
-      priority: formData.priority ? {
-        key: formData.priority as TaskPriority,
-        value: formData.priority.charAt(0).toUpperCase() + formData.priority.slice(1)
-      } : undefined,
-      due_date: formData.due_date || undefined,
-      list: selectedList
-    }
-    
-    // Optimistically update and close immediately
-    onOptimisticUpdate(task.id, optimisticUpdates)
-    onClose()
-    
-    // Send to server in background
+    setIsLoading(true)
+
+    // Optimistic update
+    onOptimisticUpdate(task.id, {
+      title,
+      description: description || undefined,
+      priority: { key: priority, value: priority.charAt(0).toUpperCase() + priority.slice(1) },
+      due_date: dueDate || undefined,
+      list: listId || undefined
+    })
+
     try {
-      await fetch(`/api/tasks/${task.id}`, {
+      const response = await fetch(`/api/tasks/${task.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          title,
+          description,
+          priority,
+          due_date: dueDate,
+          list: listId
+        })
       })
+
+      if (!response.ok) {
+        throw new Error('Failed to update task')
+      }
+
+      onClose()
     } catch (error) {
       console.error('Error updating task:', error)
+      alert('Failed to update task')
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
-  
+
   return (
-    <div 
-      className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
-      onClick={handleBackdropClick}
-    >
-      <div 
-        ref={modalRef}
-        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto"
-      >
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Task</h2>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl max-w-md w-full">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-800">
+          <h2 className="text-lg font-semibold">Edit Task</h2>
           <button
             onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-            aria-label="Close modal"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="title" className="block text-sm font-medium mb-1">
               Title
             </label>
             <input
-              ref={titleInputRef}
+              id="title"
               type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
               required
-              autoComplete="off"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="description" className="block text-sm font-medium mb-1">
               Description
             </label>
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              id="description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
               rows={3}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="priority" className="block text-sm font-medium mb-1">
               Priority
             </label>
             <select
-              value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as TaskPriority })}
-              className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              id="priority"
+              value={priority}
+              onChange={(e) => setPriority(e.target.value as TaskPriority)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
             >
-              <option value="low">Low Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="high">High Priority</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
             </select>
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="dueDate" className="block text-sm font-medium mb-1">
               Due Date
             </label>
             <input
+              id="dueDate"
               type="date"
-              value={formData.due_date}
-              onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-              className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          
+
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label htmlFor="list" className="block text-sm font-medium mb-1">
               List
             </label>
             <select
-              value={formData.list}
-              onChange={(e) => setFormData({ ...formData, list: e.target.value })}
-              className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              id="list"
+              value={listId}
+              onChange={(e) => setListId(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">No List</option>
-              {lists.map((list) => (
-                <option key={list.id} value={list.id}>{list.title}</option>
+              {lists.map(list => (
+                <option key={list.id} value={list.id}>
+                  {list.metadata.name}
+                </option>
               ))}
             </select>
           </div>
-          
-          <div className="flex items-center gap-2 pt-2">
-            <button
-              type="submit"
-              disabled={!formData.title.trim() || isSubmitting}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
-            </button>
-            
+
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              disabled={isLoading}
             >
               Cancel
+            </button>
+            <button
+              type="submit"
+              className="flex-1 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </form>

@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { cosmic } from '@/lib/cosmic'
+import { cosmic, getListsForUser } from '@/lib/cosmic'
+import { getSession } from '@/lib/auth'
 
 export async function GET() {
   try {
-    const response = await cosmic.objects
-      .find({ type: 'lists' })
-      .props(['id', 'title', 'slug', 'metadata'])
+    // Check for authenticated user
+    const session = await getSession()
     
-    return NextResponse.json({ lists: response.objects })
+    if (session) {
+      // Return only user's lists
+      const lists = await getListsForUser(session.user.id)
+      return NextResponse.json({ lists })
+    }
+    
+    // No auth - return empty array (user must log in)
+    return NextResponse.json({ lists: [] })
   } catch (error) {
     // Handle 404 (no objects found) as empty array
     if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
@@ -23,6 +30,15 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // Check authentication
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+    
     const body = await request.json()
     const { name, description, color } = body
 
@@ -38,12 +54,16 @@ export async function POST(request: NextRequest) {
 
     const response = await cosmic.objects.insertOne({
       title: name.trim(),
-      slug: slug,
+      slug: slug + '-' + Date.now(),
       type: 'lists',
       metadata: {
         name: name.trim(),
         description: description?.trim() || '',
-        color: color || '#3b82f6'
+        color: color || '#3b82f6',
+        owner: session.user.id,
+        created_by: session.user.id,
+        shared_with: [],
+        share_token: ''
       }
     })
 

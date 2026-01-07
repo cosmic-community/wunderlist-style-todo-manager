@@ -1,85 +1,143 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Task, List } from '@/types'
-import TaskList from '@/components/TaskList'
-import SkeletonLoader from '@/components/SkeletonLoader'
+import { Plus } from 'lucide-react'
+import TaskCard from './TaskCard'
+import AddTaskForm from './AddTaskForm'
+import type { Task, List } from '@/types'
 
 interface ClientTaskListProps {
+  listId?: string
   listSlug?: string
 }
 
-export default function ClientTaskList({ listSlug }: ClientTaskListProps) {
+export default function ClientTaskList({ listId, listSlug }: ClientTaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [lists, setLists] = useState<List[]>([])
+  const [showAddForm, setShowAddForm] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  // Changed: Fetch data only when listSlug changes (no polling)
+  // Fetch tasks and lists
   useEffect(() => {
-    async function fetchData() {
+    const fetchData = async () => {
       try {
         setIsLoading(true)
-        const [tasksRes, listsRes] = await Promise.all([
-          fetch('/api/tasks'),
-          fetch('/api/lists')
-        ])
-
-        if (!tasksRes.ok || !listsRes.ok) {
-          throw new Error('Failed to fetch data')
+        
+        // Fetch tasks
+        const tasksUrl = listId 
+          ? `/api/tasks?list=${listId}` 
+          : '/api/tasks'
+        const tasksResponse = await fetch(tasksUrl)
+        if (tasksResponse.ok) {
+          const tasksData = await tasksResponse.json()
+          setTasks(tasksData.tasks || [])
         }
 
-        const tasksData = await tasksRes.json()
-        const listsData = await listsRes.json()
-
-        let filteredTasks = tasksData.tasks as Task[]
-        if (listSlug) {
-          filteredTasks = filteredTasks.filter(
-            task => task.metadata.list?.slug === listSlug
-          )
+        // Fetch lists
+        const listsResponse = await fetch('/api/lists')
+        if (listsResponse.ok) {
+          const listsData = await listsResponse.json()
+          setLists(listsData.lists || [])
         }
-
-        setTasks(filteredTasks)
-        setLists(listsData.lists)
-        setError(null)
-      } catch (err) {
-        console.error('Error fetching data:', err)
-        setError('Failed to load tasks')
+      } catch (error) {
+        console.error('Error fetching data:', error)
       } finally {
         setIsLoading(false)
       }
     }
 
     fetchData()
-  }, [listSlug])
+  }, [listId])
+
+  const handleOptimisticToggle = (taskId: string) => {
+    setTasks(tasks.map(t => 
+      t.id === taskId 
+        ? { ...t, metadata: { ...t.metadata, completed: !t.metadata.completed } }
+        : t
+    ))
+  }
+
+  const handleOptimisticDelete = (taskId: string) => {
+    setTasks(tasks.filter(t => t.id !== taskId))
+  }
+
+  const handleOptimisticUpdate = (taskId: string, updates: Partial<Task['metadata']>) => {
+    setTasks(tasks.map(t => 
+      t.id === taskId 
+        ? { ...t, metadata: { ...t.metadata, ...updates } }
+        : t
+    ))
+  }
+
+  const handleOptimisticAdd = (task: Task) => {
+    setTasks([...tasks, task])
+  }
+
+  const completedTasks = tasks.filter(t => t.metadata.completed)
+  const incompleteTasks = tasks.filter(t => !t.metadata.completed)
 
   if (isLoading) {
     return (
-      <div className="space-y-2 pb-24">
-        <SkeletonLoader variant="task" count={5} />
-      </div>
-    )
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-red-400">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-        >
-          Retry
-        </button>
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="text-center text-gray-500 dark:text-gray-400">
+          Loading tasks...
+        </div>
       </div>
     )
   }
 
   return (
-    <TaskList 
-      initialTasks={tasks} 
-      lists={lists} 
-      listSlug={listSlug} 
-    />
+    <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+      <div className="space-y-4">
+        {incompleteTasks.map(task => (
+          <TaskCard
+            key={task.id}
+            task={task}
+            lists={lists}
+            onOptimisticToggle={handleOptimisticToggle}
+            onOptimisticDelete={handleOptimisticDelete}
+            onOptimisticUpdate={handleOptimisticUpdate}
+          />
+        ))}
+      </div>
+
+      {!showAddForm && (
+        <button
+          onClick={() => setShowAddForm(true)}
+          className="w-full flex items-center gap-2 p-4 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-primary hover:text-primary dark:hover:border-primary dark:hover:text-primary transition-all"
+        >
+          <Plus className="w-5 h-5" />
+          <span>Add Task</span>
+        </button>
+      )}
+
+      {showAddForm && (
+        <AddTaskForm
+          lists={lists}
+          listSlug={listSlug}
+          onOptimisticAdd={handleOptimisticAdd}
+        />
+      )}
+
+      {completedTasks.length > 0 && (
+        <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">
+            Completed ({completedTasks.length})
+          </h3>
+          <div className="space-y-4">
+            {completedTasks.map(task => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                lists={lists}
+                onOptimisticToggle={handleOptimisticToggle}
+                onOptimisticDelete={handleOptimisticDelete}
+                onOptimisticUpdate={handleOptimisticUpdate}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

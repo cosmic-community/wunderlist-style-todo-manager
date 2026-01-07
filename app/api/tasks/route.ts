@@ -1,14 +1,20 @@
 import { NextResponse } from 'next/server'
-import { cosmic } from '@/lib/cosmic'
+import { cosmic, getTasksForUser, getListsForUser } from '@/lib/cosmic'
+import { getSession } from '@/lib/auth'
 
 export async function GET() {
   try {
-    const response = await cosmic.objects
-      .find({ type: 'tasks' })
-      .props(['id', 'title', 'slug', 'metadata', 'created_at', 'modified_at'])
-      .depth(1)
+    // Check for authenticated user
+    const session = await getSession()
     
-    return NextResponse.json({ tasks: response.objects })
+    if (session) {
+      // Return only user's tasks
+      const tasks = await getTasksForUser(session.user.id)
+      return NextResponse.json({ tasks })
+    }
+    
+    // No auth - return empty array
+    return NextResponse.json({ tasks: [] })
   } catch (error) {
     // Handle 404 (no objects found) as empty array
     if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
@@ -24,7 +30,28 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const session = await getSession()
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+    
     const data = await request.json()
+    
+    // Validate that the list belongs to the user
+    if (data.list) {
+      const userLists = await getListsForUser(session.user.id)
+      const listIds = userLists.map(l => l.id)
+      
+      if (!listIds.includes(data.list)) {
+        return NextResponse.json(
+          { error: 'List not found or not accessible' },
+          { status: 403 }
+        )
+      }
+    }
     
     // Only include fields that exist in the Cosmic object type schema
     // Note: 'starred' field is not part of the tasks object type

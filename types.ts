@@ -13,6 +13,18 @@ export interface CosmicObject {
 // Priority type for select-dropdown (exact values from content model)
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+// User object type
+export interface User extends CosmicObject {
+  type: 'users';
+  metadata: {
+    email: string;
+    password_hash: string;
+    display_name: string;
+    email_verified: boolean;
+    verification_code?: string;
+  };
+}
+
 // List object type
 export interface List extends CosmicObject {
   type: 'lists';
@@ -20,6 +32,10 @@ export interface List extends CosmicObject {
     name: string;
     description?: string;
     color?: string;
+    owner?: string | User;
+    shared_with?: string[] | User[];
+    share_token?: string;
+    created_by?: string | User;
   };
 }
 
@@ -36,7 +52,7 @@ export interface Task extends CosmicObject {
       value: string;
     };
     due_date?: string;
-    list?: List;
+    list?: List | string;
   };
 }
 
@@ -78,4 +94,34 @@ export interface UpdateListData {
   name?: string;
   description?: string;
   color?: string;
+}
+
+// Auth types
+export interface AuthUser {
+  id: string;
+  email: string;
+  display_name: string;
+  email_verified: boolean;
+}
+
+export interface AuthSession {
+  user: AuthUser;
+  token: string;
+}
+
+export interface SignupData {
+  email: string;
+  password: string;
+  display_name: string;
+}
+
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface InviteData {
+  email: string;
+  listId: string;
+  inviterName: string;
 }
