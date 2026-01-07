@@ -1,3 +1,5 @@
+'use client'
+
 import Link from 'next/link'
 import { List } from '@/types'
 import { CheckSquare, ListTodo } from 'lucide-react'
