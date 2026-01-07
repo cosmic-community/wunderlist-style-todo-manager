@@ -26,6 +26,8 @@ export async function POST(request: Request) {
   try {
     const data = await request.json()
     
+    // Only include fields that exist in the Cosmic object type schema
+    // Note: 'starred' field is not part of the tasks object type
     const response = await cosmic.objects.insertOne({
       type: 'tasks',
       title: data.title,
@@ -33,7 +35,6 @@ export async function POST(request: Request) {
         title: data.title,
         description: data.description || '',
         completed: false,
-        starred: false,
         priority: data.priority ? { key: data.priority, value: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) } : { key: 'medium', value: 'Medium' },
         due_date: data.due_date || '',
         list: data.list || ''

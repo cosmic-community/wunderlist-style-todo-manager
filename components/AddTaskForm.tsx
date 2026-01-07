@@ -31,6 +31,7 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     setIsSubmitting(true)
     
     // Create optimistic task with temporary ID
+    // Note: 'starred' is optional and may not exist in the content model
     const optimisticTask: Task = {
       id: `temp-${Date.now()}`,
       slug: `temp-${Date.now()}`,
@@ -41,7 +42,6 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
       metadata: {
         title: title,
         completed: false,
-        starred: false,
         list: defaultList
       }
     }

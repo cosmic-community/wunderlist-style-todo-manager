@@ -16,6 +16,8 @@ export async function PATCH(
       updateData.completed = data.completed
     }
     
+    // Note: 'starred' field may not exist in the object type
+    // Only include if explicitly supported by the content model
     if (data.starred !== undefined) {
       updateData.starred = data.starred
     }
