@@ -69,22 +69,15 @@ export async function PATCH(
   }
 }
 
+// Changed: Removed authentication and ownership checks to allow anyone to delete public lists
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-    
     const { id } = await params
     
-    // Check if user owns the list
+    // Check if list exists
     const list = await getListById(id)
     if (!list) {
       return NextResponse.json(
@@ -93,17 +86,7 @@ export async function DELETE(
       )
     }
     
-    const ownerId = typeof list.metadata.owner === 'string' 
-      ? list.metadata.owner 
-      : list.metadata.owner?.id
-    
-    if (ownerId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Not authorized to delete this list' },
-        { status: 403 }
-      )
-    }
-    
+    // Changed: Allow anyone to delete public lists - no authentication or ownership check required
     await cosmic.objects.deleteOne(id)
     
     return NextResponse.json({ success: true })
