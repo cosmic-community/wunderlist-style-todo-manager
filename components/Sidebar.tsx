@@ -122,27 +122,35 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
             <ThemeToggle />
           </div>
           
-          {/* Changed: Show user menu if authenticated, auth buttons if not */}
+          {/* Changed: Show user menu if authenticated, auth buttons with demo copy if not */}
           {isAuthenticated ? (
             <div className="mb-4 -mx-3">
               <UserMenu />
             </div>
           ) : (
-            <div className="mb-4 space-y-2">
-              <Link
-                href="/login"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-              >
-                <LogIn className="w-4 h-4" />
-                Log In
-              </Link>
-              <Link
-                href="/signup"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
-              >
-                <SignupIcon className="w-4 h-4" />
-                Sign Up
-              </Link>
+            <div className="mb-4">
+              {/* Changed: Added demo experience notice */}
+              <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                <p className="text-xs text-amber-800 dark:text-amber-200 leading-relaxed">
+                  👋 You&apos;re viewing the <strong>public demo</strong>. Sign up to create your own private Cosmic todo experience!
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Link
+                  href="/login"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
+                >
+                  <SignupIcon className="w-4 h-4" />
+                  Sign Up
+                </Link>
+              </div>
             </div>
           )}
           
