@@ -7,6 +7,7 @@ import { Menu, X, CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlu
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
+import InviteModal from './InviteModal' // Changed: Added InviteModal import
 import SkeletonLoader from './SkeletonLoader'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -23,6 +24,7 @@ interface MobileHeaderProps {
 export default function MobileHeader({ lists, currentList, isLoading = false, onListDeleted, onListCreated, onListUpdated, onListClick }: MobileHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [editingList, setEditingList] = useState<List | null>(null)
+  const [invitingList, setInvitingList] = useState<List | null>(null) // Changed: Added invitingList state
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated } = useAuth()
@@ -63,6 +65,17 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
     e.stopPropagation()
     setOpenMenuId(null)
     setEditingList(list)
+  }
+
+  // Changed: Added handleInviteClick function
+  const handleInviteClick = (e: React.MouseEvent, list: List) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setOpenMenuId(null)
+    // Only allow invite if authenticated
+    if (isAuthenticated) {
+      setInvitingList(list)
+    }
   }
 
   const handleDeleteClick = (e: React.MouseEvent, listId: string) => {
@@ -209,6 +222,16 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
                             ref={menuRef}
                             className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
                           >
+                            {/* Changed: Added invite button - only show if authenticated */}
+                            {isAuthenticated && (
+                              <button
+                                onClick={(e) => handleInviteClick(e, list)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <UserPlus className="w-4 h-4" />
+                                Invite
+                              </button>
+                            )}
                             <button
                               onClick={(e) => handleEditClick(e, list)}
                               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -247,6 +270,15 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
           onClose={() => setEditingList(null)}
           onOptimisticUpdate={handleOptimisticUpdate}
           onOptimisticDelete={handleOptimisticDelete}
+        />
+      )}
+
+      {/* Changed: Added InviteModal - only show if authenticated */}
+      {invitingList && isAuthenticated && (
+        <InviteModal
+          listId={invitingList.id}
+          listName={invitingList.metadata.name}
+          onClose={() => setInvitingList(null)}
         />
       )}
     </>
