@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
-import { CheckSquare, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react'
+import { CheckSquare, Mail, Lock, AlertCircle, Loader2, ArrowLeft } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -58,6 +58,15 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black px-4">
       <div className="max-w-md w-full">
+        {/* Changed: Added back to home link */}
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white mb-4 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Home
+        </Link>
+        
         <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl p-8">
           {/* Header */}
           <div className="flex items-center justify-center gap-2 mb-8">
