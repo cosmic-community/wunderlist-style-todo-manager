@@ -13,13 +13,28 @@ export async function GET() {
       return NextResponse.json({ lists })
     }
     
-    // No auth - return empty array (user must log in)
-    return NextResponse.json({ lists: [] })
-  } catch (error) {
-    // Handle 404 (no objects found) as empty array
-    if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
-      return NextResponse.json({ lists: [] })
+    // Changed: Return demo lists for unauthenticated users
+    try {
+      const response = await cosmic.objects
+        .find({ type: 'lists' })
+        .props(['id', 'title', 'slug', 'metadata'])
+        .depth(1)
+      
+      // Filter to show only demo lists (lists without owner or with empty owner)
+      const demoLists = response.objects.filter((list: any) => {
+        const owner = list.metadata.owner
+        return !owner || owner === '' || (typeof owner === 'object' && !owner.id)
+      })
+      
+      return NextResponse.json({ lists: demoLists })
+    } catch (error) {
+      // If no demo lists exist, return empty array
+      if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
+        return NextResponse.json({ lists: [] })
+      }
+      throw error
     }
+  } catch (error) {
     console.error('Error fetching lists:', error)
     return NextResponse.json(
       { error: 'Failed to fetch lists' },
@@ -30,15 +45,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await getSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-    
     const body = await request.json()
     const { name, description, color } = body
 
@@ -49,10 +55,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Check authentication
+    const session = await getSession()
+    
     // Generate a slug from the name
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 
-    const response = await cosmic.objects.insertOne({
+    // Changed: Allow list creation without auth (demo mode)
+    const listData: any = {
       title: name.trim(),
       slug: slug + '-' + Date.now(),
       type: 'lists',
@@ -60,14 +70,19 @@ export async function POST(request: NextRequest) {
         name: name.trim(),
         description: description?.trim() || '',
         color: color || '#3b82f6',
-        owner: session.user.id,
-        created_by: session.user.id,
         shared_with: [],
         share_token: ''
       }
-    })
+    }
 
-    // Changed: Return the full list object with all properties
+    // Only add owner if authenticated
+    if (session) {
+      listData.metadata.owner = session.user.id
+      listData.metadata.created_by = session.user.id
+    }
+
+    const response = await cosmic.objects.insertOne(listData)
+
     return NextResponse.json({ 
       list: {
         id: response.object.id,

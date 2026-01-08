@@ -1,12 +1,14 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { List } from '@/types'
-import { Menu, X, CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2 } from 'lucide-react'
+import { Menu, X, CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface MobileHeaderProps {
   lists: List[]
@@ -23,6 +25,7 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
   const [editingList, setEditingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const { isAuthenticated } = useAuth()
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -116,6 +119,28 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
+              {/* Changed: Show auth buttons if not authenticated */}
+              {!isAuthenticated && (
+                <div className="mb-4 space-y-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  >
+                    <LogIn className="w-4 h-4" />
+                    Log In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
+                  >
+                    <SignupIcon className="w-4 h-4" />
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+
               <nav className="space-y-1">
                 <button
                   onClick={(e) => handleListNavigation(e, undefined)}

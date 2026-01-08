@@ -5,8 +5,8 @@ import ClientTaskList from '@/components/ClientTaskList'
 import ClientSidebar from '@/components/ClientSidebar'
 import ClientMobileHeader from '@/components/ClientMobileHeader'
 import ClientListHeader from '@/components/ClientListHeader'
-import AuthGuard from '@/components/AuthGuard'
 
+// Changed: Removed AuthGuard wrapper to allow demo access
 function TodoApp() {
   const [currentListSlug, setCurrentListSlug] = useState<string | undefined>(undefined)
 
@@ -43,10 +43,5 @@ function TodoApp() {
   )
 }
 
-export default function Home() {
-  return (
-    <AuthGuard>
-      <TodoApp />
-    </AuthGuard>
-  )
-}
+// Changed: Removed AuthGuard, direct export
+export default TodoApp

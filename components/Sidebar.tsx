@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { List } from '@/types'
-import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus } from 'lucide-react'
+import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
@@ -20,7 +20,7 @@ interface SidebarProps {
   onListReplaced?: (tempId: string, realList: List) => void
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
   onListDeleted?: (listId: string) => void
-  onListClick?: (slug?: string) => void // Changed: Add navigation handler
+  onListClick?: (slug?: string) => void
 }
 
 export default function Sidebar({ lists, currentListSlug, isLoading = false, onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
@@ -48,7 +48,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
     }
   }
 
-  // Changed: Add handler to pass through list replacement
   const handleListReplaced = (tempId: string, realList: List) => {
     if (onListReplaced) {
       onListReplaced(tempId, realList)
@@ -84,7 +83,10 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
     e.preventDefault()
     e.stopPropagation()
     setOpenMenuId(null)
-    setInvitingList(list)
+    // Changed: Only allow invite if authenticated
+    if (isAuthenticated) {
+      setInvitingList(list)
+    }
   }
 
   const handleDeleteClick = (e: React.MouseEvent, listId: string) => {
@@ -101,7 +103,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
     })
   }
 
-  // Changed: Handle list navigation without page refresh
   const handleListNavigation = (e: React.MouseEvent, slug?: string) => {
     e.preventDefault()
     if (onListClick) {
@@ -121,15 +122,31 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
             <ThemeToggle />
           </div>
           
-          {/* User Menu */}
-          {isAuthenticated && (
+          {/* Changed: Show user menu if authenticated, auth buttons if not */}
+          {isAuthenticated ? (
             <div className="mb-4 -mx-3">
               <UserMenu />
+            </div>
+          ) : (
+            <div className="mb-4 space-y-2">
+              <Link
+                href="/login"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                Log In
+              </Link>
+              <Link
+                href="/signup"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
+              >
+                <SignupIcon className="w-4 h-4" />
+                Sign Up
+              </Link>
             </div>
           )}
           
           <nav className="space-y-1">
-            {/* Changed: Use button with client-side navigation */}
             <button
               onClick={(e) => handleListNavigation(e, undefined)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
@@ -161,7 +178,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
                 
                 {lists.map((list) => (
                   <div key={list.id} className="relative group">
-                    {/* Changed: Use button with client-side navigation */}
                     <button
                       onClick={(e) => handleListNavigation(e, list.slug)}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
@@ -192,13 +208,16 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
                         ref={menuRef}
                         className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
                       >
-                        <button
-                          onClick={(e) => handleInviteClick(e, list)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          <UserPlus className="w-4 h-4" />
-                          Invite
-                        </button>
+                        {/* Changed: Only show invite if authenticated */}
+                        {isAuthenticated && (
+                          <button
+                            onClick={(e) => handleInviteClick(e, list)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <UserPlus className="w-4 h-4" />
+                            Invite
+                          </button>
+                        )}
                         <button
                           onClick={(e) => handleEditClick(e, list)}
                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -220,15 +239,13 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
               </>
             )}
 
-            {/* Create List Form */}
-            {isAuthenticated && (
-              <div className="pt-4">
-                <CreateListForm 
-                  onListCreated={handleListCreated}
-                  onListReplaced={handleListReplaced}
-                />
-              </div>
-            )}
+            {/* Changed: Always show create list form (works in demo mode) */}
+            <div className="pt-4">
+              <CreateListForm 
+                onListCreated={handleListCreated}
+                onListReplaced={handleListReplaced}
+              />
+            </div>
           </nav>
         </div>
       </aside>
@@ -243,8 +260,8 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
         />
       )}
 
-      {/* Invite Modal */}
-      {invitingList && (
+      {/* Changed: Only show invite modal if authenticated */}
+      {invitingList && isAuthenticated && (
         <InviteModal
           listId={invitingList.id}
           listName={invitingList.metadata.name}

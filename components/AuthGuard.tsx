@@ -7,17 +7,19 @@ import { useEffect } from 'react'
 interface AuthGuardProps {
   children: React.ReactNode
   fallback?: React.ReactNode
+  requireAuth?: boolean // Changed: Make auth optional
 }
 
-export default function AuthGuard({ children, fallback }: AuthGuardProps) {
+export default function AuthGuard({ children, fallback, requireAuth = true }: AuthGuardProps) {
   const { isAuthenticated, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    // Changed: Only redirect if auth is required
+    if (requireAuth && !isLoading && !isAuthenticated) {
       router.push('/login')
     }
-  }, [isLoading, isAuthenticated, router])
+  }, [isLoading, isAuthenticated, router, requireAuth])
 
   if (isLoading) {
     return fallback || (
@@ -27,7 +29,8 @@ export default function AuthGuard({ children, fallback }: AuthGuardProps) {
     )
   }
 
-  if (!isAuthenticated) {
+  // Changed: Allow access even without auth if not required
+  if (requireAuth && !isAuthenticated) {
     return null
   }
 
