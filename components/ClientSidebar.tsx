@@ -142,6 +142,11 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
     }
   }
 
+  // Changed: Add refresh handler
+  const handleRefresh = () => {
+    fetchLists()
+  }
+
   return (
     <Sidebar 
       lists={lists} 
@@ -153,6 +158,7 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
       onListUpdated={handleListUpdated}
       onListDeleted={handleListDeleted}
       onListClick={handleListClick}
+      onRefresh={handleRefresh} // Changed: Pass refresh callback
     />
   )
 }
