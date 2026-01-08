@@ -1,15 +1,16 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { List, Task } from '@/types'
+import { List, Task, CheckboxPosition } from '@/types'
 
 interface AddTaskFormProps {
   lists: List[]
   listSlug?: string
   onOptimisticAdd: (task: Task) => void
+  checkboxPosition?: CheckboxPosition // Changed: Added checkbox position prop
 }
 
-export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTaskFormProps) {
+export default function AddTaskForm({ lists, listSlug, onOptimisticAdd, checkboxPosition = 'left' }: AddTaskFormProps) {
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -90,13 +91,19 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     }
   }
   
+  // Changed: Checkbox component for reuse
+  const CheckboxPlaceholder = (
+    <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" />
+  )
+  
   // Changed: Always show the input form - no collapsed button state
   // This allows for rapid task entry without clicking to expand
   // Changed: Added relative z-index to ensure form appears above task checkmarks
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 border border-gray-200 dark:border-gray-800 relative z-20">
       <div className="flex items-center gap-3">
-        <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" />
+        {/* Changed: Conditionally render checkbox placeholder on left or right based on preference */}
+        {checkboxPosition === 'left' && CheckboxPlaceholder}
         <input
           ref={inputRef}
           type="text"
@@ -115,6 +122,8 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
           // Changed: Added enterKeyHint to show "done" or appropriate key on mobile
           enterKeyHint="done"
         />
+        {/* Changed: Checkbox placeholder on right side if preference is set */}
+        {checkboxPosition === 'right' && CheckboxPlaceholder}
       </div>
     </form>
   )

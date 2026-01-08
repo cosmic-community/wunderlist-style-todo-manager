@@ -1,66 +1,136 @@
 'use client'
 
-import { useState, useCallback } from 'react'
-import ClientTaskList from '@/components/ClientTaskList'
-import ClientSidebar from '@/components/ClientSidebar'
-import ClientMobileHeader from '@/components/ClientMobileHeader'
-import ClientListHeader from '@/components/ClientListHeader'
-import SkeletonLoader from '@/components/SkeletonLoader'
+import { useState, useCallback, useEffect } from 'react'
+import { Task, List } from '@/types'
+import TaskCard from '@/components/TaskCard'
+import AddTaskForm from '@/components/AddTaskForm'
+import EmptyState from '@/components/EmptyState'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ListPageClientProps {
-  slug: string
+  initialTasks: Task[]
+  lists: List[]
+  listSlug: string
 }
 
-export default function ListPageClient({ slug }: ListPageClientProps) {
-  // Changed: Track when a list is being created to show loading state
-  const [isCreatingList, setIsCreatingList] = useState(false)
-  // Changed: Track refresh key to trigger list area refresh when list is updated
-  const [refreshKey, setRefreshKey] = useState(0)
-  // Changed: Track if list is being updated to show loading state
-  const [isUpdatingList, setIsUpdatingList] = useState(false)
-
-  // Changed: Callback to trigger refresh of main list area
-  const handleListRefresh = useCallback(() => {
-    setIsUpdatingList(true)
-    setRefreshKey(prev => prev + 1)
-    // Reset updating state after a short delay to allow UI to update
-    setTimeout(() => setIsUpdatingList(false), 500)
+export default function ListPageClient({ 
+  initialTasks, 
+  lists, 
+  listSlug 
+}: ListPageClientProps) {
+  const [tasks, setTasks] = useState<Task[]>(initialTasks)
+  const [pendingTasks, setPendingTasks] = useState<Set<string>>(new Set())
+  const { checkboxPosition } = useAuth() // Changed: Get checkbox position from auth context
+  
+  // Changed: Sync with initialTasks when they change
+  useEffect(() => {
+    setTasks(initialTasks)
+  }, [initialTasks])
+  
+  // Optimistic toggle - instant UI update
+  const handleOptimisticToggle = useCallback((taskId: string) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, metadata: { ...task.metadata, completed: !task.metadata.completed } }
+        : task
+    ))
+    setPendingTasks(prev => new Set(prev).add(taskId))
   }, [])
-
+  
+  // Optimistic delete - instant UI removal
+  const handleOptimisticDelete = useCallback((taskId: string) => {
+    setTasks(prev => prev.filter(task => task.id !== taskId))
+  }, [])
+  
+  // Optimistic update - instant UI update for task properties
+  const handleOptimisticUpdate = useCallback((taskId: string, updates: Partial<Task['metadata']>) => {
+    setTasks(prev => prev.map(task => 
+      task.id === taskId 
+        ? { ...task, metadata: { ...task.metadata, ...updates } }
+        : task
+    ))
+  }, [])
+  
+  // Changed: Optimistic add - instant UI addition
+  const handleOptimisticAdd = useCallback((task: Task) => {
+    setTasks(prev => [task, ...prev])
+  }, [])
+  
+  // Clear pending state after sync
+  const handleSyncComplete = useCallback((taskId: string) => {
+    setPendingTasks(prev => {
+      const next = new Set(prev)
+      next.delete(taskId)
+      return next
+    })
+  }, [])
+  
+  // Filter tasks for this list
+  const filteredTasks = tasks.filter(task => {
+    const taskList = task.metadata.list
+    if (typeof taskList === 'string') {
+      // Changed: Match by list ID or slug
+      const matchingList = lists.find(l => l.id === taskList || l.slug === taskList)
+      return matchingList?.slug === listSlug
+    }
+    return taskList?.slug === listSlug
+  })
+  
+  // Separate incomplete and completed tasks
+  const incompleteTasks = filteredTasks.filter(task => !task.metadata.completed)
+  const completedTasks = filteredTasks.filter(task => task.metadata.completed)
+  
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden">
-      {/* Mobile Header */}
-      <ClientMobileHeader currentListSlug={slug} onListRefresh={handleListRefresh} />
-      
-      {/* Desktop Sidebar */}
-      <ClientSidebar 
-        currentListSlug={slug} 
-        onCreatingStateChange={setIsCreatingList}
-        onListRefresh={handleListRefresh}
+    <div className="space-y-3">
+      {/* Changed: Add form at top, pass checkbox position */}
+      <AddTaskForm 
+        lists={lists} 
+        listSlug={listSlug} 
+        onOptimisticAdd={handleOptimisticAdd}
+        checkboxPosition={checkboxPosition}
       />
       
-      {/* Changed: Main Content - properly scrollable with fixed header space */}
-      <main className="flex-1 pt-16 md:pt-0 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 pb-32">
-          {/* Changed: Show creating list loading state when a list is being created */}
-          {isCreatingList ? (
-            <SkeletonLoader variant="creating-list" />
-          ) : isUpdatingList ? (
-            // Changed: Show loading state while list is being updated
-            <>
-              <SkeletonLoader variant="header" />
-              <div className="space-y-3 mt-6">
-                <SkeletonLoader variant="task" count={3} />
-              </div>
-            </>
-          ) : (
-            <>
-              <ClientListHeader listSlug={slug} refreshKey={refreshKey} />
-              <ClientTaskList listSlug={slug} refreshKey={refreshKey} />
-            </>
-          )}
+      {/* Incomplete tasks */}
+      {incompleteTasks.map(task => (
+        <TaskCard
+          key={task.id}
+          task={task}
+          lists={lists}
+          onOptimisticToggle={handleOptimisticToggle}
+          onOptimisticDelete={handleOptimisticDelete}
+          onOptimisticUpdate={handleOptimisticUpdate}
+          onSyncComplete={handleSyncComplete}
+          checkboxPosition={checkboxPosition}
+        />
+      ))}
+      
+      {/* Empty state when no tasks */}
+      {incompleteTasks.length === 0 && completedTasks.length === 0 && (
+        <EmptyState listSlug={listSlug} />
+      )}
+      
+      {/* Completed tasks section */}
+      {completedTasks.length > 0 && (
+        <div className="mt-6">
+          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
+            Completed ({completedTasks.length})
+          </h3>
+          <div className="space-y-2">
+            {completedTasks.map(task => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                lists={lists}
+                onOptimisticToggle={handleOptimisticToggle}
+                onOptimisticDelete={handleOptimisticDelete}
+                onOptimisticUpdate={handleOptimisticUpdate}
+                onSyncComplete={handleSyncComplete}
+                checkboxPosition={checkboxPosition}
+              />
+            ))}
+          </div>
         </div>
-      </main>
+      )}
     </div>
   )
 }
