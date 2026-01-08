@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail } from 'lucide-react'
+import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send } from 'lucide-react'
 import Link from 'next/link'
 
 export default function SettingsPage() {
@@ -16,13 +16,10 @@ export default function SettingsPage() {
   const [profileSuccess, setProfileSuccess] = useState('')
   const [profileError, setProfileError] = useState('')
   
-  // Password form state
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordLoading, setPasswordLoading] = useState(false)
-  const [passwordSuccess, setPasswordSuccess] = useState('')
-  const [passwordError, setPasswordError] = useState('')
+  // Password reset state
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetSuccess, setResetSuccess] = useState('')
+  const [resetError, setResetError] = useState('')
 
   // Initialize form with user data
   useEffect(() => {
@@ -67,49 +64,34 @@ export default function SettingsPage() {
     setProfileLoading(false)
   }
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setPasswordError('')
-    setPasswordSuccess('')
-
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match')
-      return
-    }
-
-    if (newPassword.length < 8) {
-      setPasswordError('New password must be at least 8 characters')
-      return
-    }
-
-    setPasswordLoading(true)
+  // Changed: Replaced password change form with password reset email function
+  const handlePasswordReset = async () => {
+    if (!user?.email) return
+    
+    setResetError('')
+    setResetSuccess('')
+    setResetLoading(true)
 
     try {
-      const response = await fetch('/api/auth/change-password', {
+      const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          current_password: currentPassword, 
-          new_password: newPassword 
-        })
+        body: JSON.stringify({ email: user.email })
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        setPasswordSuccess('Password changed successfully!')
-        setCurrentPassword('')
-        setNewPassword('')
-        setConfirmPassword('')
-        setTimeout(() => setPasswordSuccess(''), 3000)
+        setResetSuccess('Password reset email sent! Check your inbox for instructions.')
+        setTimeout(() => setResetSuccess(''), 5000)
       } else {
-        setPasswordError(data.error || 'Failed to change password')
+        setResetError(data.error || 'Failed to send reset email')
       }
     } catch {
-      setPasswordError('Network error')
+      setResetError('Network error')
     }
 
-    setPasswordLoading(false)
+    setResetLoading(false)
   }
 
   if (authLoading) {
@@ -219,96 +201,57 @@ export default function SettingsPage() {
           </form>
         </section>
 
-        {/* Password Section */}
+        {/* Password Section - Changed: Replaced form with reset button */}
         <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
               <Lock className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Change Password</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Update your password to keep your account secure</p>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Password</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Reset your password via email</p>
             </div>
           </div>
 
-          <form onSubmit={handlePasswordChange} className="space-y-4">
-            {/* Current Password */}
-            <div>
-              <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Current Password
-              </label>
-              <input
-                id="currentPassword"
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
-                required
-              />
-            </div>
-
-            {/* New Password */}
-            <div>
-              <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                New Password
-              </label>
-              <input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
-                placeholder="At least 8 characters"
-                required
-                minLength={8}
-              />
-            </div>
-
-            {/* Confirm New Password */}
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Confirm New Password
-              </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
-                required
-                minLength={8}
-              />
-            </div>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Click the button below to receive a password reset link at <strong className="text-gray-900 dark:text-white">{user.email}</strong>. 
+              You&apos;ll be able to create a new password from the link in the email.
+            </p>
 
             {/* Success/Error Messages */}
-            {passwordSuccess && (
+            {resetSuccess && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
                 <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{passwordSuccess}</span>
+                <span className="text-sm">{resetSuccess}</span>
               </div>
             )}
-            {passwordError && (
+            {resetError && (
               <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
                 <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{passwordError}</span>
+                <span className="text-sm">{resetError}</span>
               </div>
             )}
 
             <button
-              type="submit"
-              disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword}
+              type="button"
+              onClick={handlePasswordReset}
+              disabled={resetLoading}
               className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              {passwordLoading ? (
+              {resetLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Changing Password...
+                  Sending...
                 </>
               ) : (
-                'Change Password'
+                <>
+                  <Send className="w-5 h-5" />
+                  Send Password Reset Email
+                </>
               )}
             </button>
-          </form>
+          </div>
         </section>
       </main>
     </div>
