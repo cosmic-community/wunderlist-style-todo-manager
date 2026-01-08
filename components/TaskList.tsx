@@ -4,6 +4,7 @@ import { useCallback, useState, useEffect, useRef } from 'react'
 import { Task, List } from '@/types'
 import TaskCard from '@/components/TaskCard'
 import AddTaskForm from '@/components/AddTaskForm'
+import EmptyState from '@/components/EmptyState'
 import { ChevronRight } from 'lucide-react'
 
 interface TaskListProps {
@@ -31,6 +32,10 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   // Changed: Track tasks that are currently celebrating (showing confetti + fade out)
   // Now stores timestamp when animation started for more precise timing
   const [celebratingTasks, setCelebratingTasks] = useState<Map<string, number>>(new Map())
+
+  // Changed: Get current list name for empty state
+  const currentList = listSlug ? lists.find(l => l.slug === listSlug) : null
+  const listName = currentList?.metadata?.name
 
   // Changed: Update tasks when initialTasks prop changes (list navigation)
   useEffect(() => {
@@ -182,11 +187,9 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
           </div>
         )}
         
-        {/* Empty State */}
+        {/* Changed: Improved Empty State */}
         {pendingTasks.length === 0 && completedTasks.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400 text-lg">No tasks yet. Add your first task below!</p>
-          </div>
+          <EmptyState variant="tasks" listName={listName} />
         )}
       </div>
       
