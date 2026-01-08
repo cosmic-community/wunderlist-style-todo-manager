@@ -1,24 +1,32 @@
 'use client'
 
 import { useState } from 'react'
+import ClientTaskList from '@/components/ClientTaskList'
 import ClientSidebar from '@/components/ClientSidebar'
 import ClientMobileHeader from '@/components/ClientMobileHeader'
-import ClientTaskList from '@/components/ClientTaskList'
+import ClientListHeader from '@/components/ClientListHeader'
 import SkeletonLoader from '@/components/SkeletonLoader'
 
-export default function HomePage() {
+interface ListPageClientProps {
+  slug: string
+}
+
+export default function ListPageClient({ slug }: ListPageClientProps) {
   // Changed: Track when a list is being created to show loading state
   const [isCreatingList, setIsCreatingList] = useState(false)
 
   return (
     <div className="flex h-screen bg-gray-50 dark:bg-black">
       {/* Mobile Header */}
-      <ClientMobileHeader />
+      <ClientMobileHeader currentListSlug={slug} />
       
       {/* Desktop Sidebar */}
-      <ClientSidebar onCreatingStateChange={setIsCreatingList} />
+      <ClientSidebar 
+        currentListSlug={slug} 
+        onCreatingStateChange={setIsCreatingList}
+      />
       
-      {/* Main Content */}
+      {/* Changed: Main Content - removed overflow-auto to allow confetti to display */}
       <main className="flex-1 pt-16 md:pt-0" style={{ overflow: 'visible' }}>
         <div className="max-w-2xl mx-auto px-4 py-6 md:py-8" style={{ overflow: 'visible' }}>
           {/* Changed: Show creating list loading state when a list is being created */}
@@ -26,12 +34,8 @@ export default function HomePage() {
             <SkeletonLoader variant="creating-list" />
           ) : (
             <>
-              <div className="mb-6">
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">All Tasks</h1>
-                <p className="text-gray-500 dark:text-gray-400">View all your tasks across all lists</p>
-              </div>
-              
-              <ClientTaskList />
+              <ClientListHeader listSlug={slug} />
+              <ClientTaskList listSlug={slug} />
             </>
           )}
         </div>

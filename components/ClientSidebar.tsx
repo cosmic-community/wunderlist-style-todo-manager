@@ -7,10 +7,12 @@ import Sidebar from '@/components/Sidebar'
 
 interface ClientSidebarProps {
   currentListSlug?: string
-  onListChange?: (slug?: string) => void // Changed: Add callback for list changes
+  onListChange?: (slug?: string) => void
+  // Changed: Add callback for creating state to show loading in main area
+  onCreatingStateChange?: (isCreating: boolean) => void
 }
 
-export default function ClientSidebar({ currentListSlug, onListChange }: ClientSidebarProps) {
+export default function ClientSidebar({ currentListSlug, onListChange, onCreatingStateChange }: ClientSidebarProps) {
   const [lists, setLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(true)
   // Changed: Track lists that are still syncing (have temporary IDs)
@@ -147,6 +149,13 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
     fetchLists()
   }
 
+  // Changed: Handle creating state change and pass to parent
+  const handleCreatingStateChange = (isCreating: boolean) => {
+    if (onCreatingStateChange) {
+      onCreatingStateChange(isCreating)
+    }
+  }
+
   return (
     <Sidebar 
       lists={lists} 
@@ -158,7 +167,8 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
       onListUpdated={handleListUpdated}
       onListDeleted={handleListDeleted}
       onListClick={handleListClick}
-      onRefresh={handleRefresh} // Changed: Pass refresh callback
+      onRefresh={handleRefresh}
+      onCreatingStateChange={handleCreatingStateChange}
     />
   )
 }
