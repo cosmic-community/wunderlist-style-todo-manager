@@ -14,6 +14,18 @@ function getBaseUrl(): string {
   return 'http://localhost:3000'
 }
 
+// Helper function to escape HTML to prevent XSS
+function escapeHtml(text: string): string {
+  const htmlEscapes: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  }
+  return text.replace(/[&<>"']/g, (char) => htmlEscapes[char] || char)
+}
+
 export async function sendVerificationEmail(
   email: string,
   displayName: string,
@@ -114,11 +126,30 @@ export async function sendInviteEmail(
   inviterName: string,
   listName: string,
   listColor: string,
-  verificationCode: string
+  verificationCode: string,
+  personalMessage?: string
 ): Promise<boolean> {
   const baseUrl = getBaseUrl()
   const acceptUrl = `${baseUrl}/verify-email?code=${verificationCode}&email=${encodeURIComponent(email)}&invite=true`
   const colorToUse = listColor || '#3b82f6'
+  
+  // Escape user-provided content to prevent XSS
+  const escapedInviterName = escapeHtml(inviterName)
+  const escapedListName = escapeHtml(listName)
+  const escapedMessage = personalMessage ? escapeHtml(personalMessage) : undefined
+  
+  // Build the personal message HTML section if provided
+  const messageSection = escapedMessage ? `
+                      <!-- Personal Message -->
+                      <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; margin: 16px 0;">
+                        <tr>
+                          <td style="background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 0 8px 8px 0; padding: 16px;">
+                            <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0; font-weight: 500;">Message from ${escapedInviterName}:</p>
+                            <p style="font-size: 15px; color: #374151; margin: 0; line-height: 1.6; font-style: italic;">"${escapedMessage}"</p>
+                          </td>
+                        </tr>
+                      </table>
+  ` : ''
   
   try {
     await resend.emails.send({
@@ -158,7 +189,7 @@ export async function sendInviteEmail(
                       <!-- Content -->
                       <h1 style="font-size: 24px; font-weight: 600; color: #111827; margin: 0 0 16px 0;">You've been invited! 🎉</h1>
                       
-                      <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 16px 0;"><strong style="color: #111827;">${inviterName}</strong> has invited you to collaborate on a todo list:</p>
+                      <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 0 0 16px 0;"><strong style="color: #111827;">${escapedInviterName}</strong> has invited you to collaborate on a todo list:</p>
                       
                       <!-- List Preview -->
                       <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; margin: 16px 0;">
@@ -169,13 +200,13 @@ export async function sendInviteEmail(
                                 <td style="width: 12px; height: 12px; vertical-align: middle;">
                                   <div style="width: 12px; height: 12px; background-color: ${colorToUse}; border-radius: 50%; display: block;"></div>
                                 </td>
-                                <td style="padding-left: 8px; font-weight: 600; color: #111827; font-size: 16px;">${listName}</td>
+                                <td style="padding-left: 8px; font-weight: 600; color: #111827; font-size: 16px;">${escapedListName}</td>
                               </tr>
                             </table>
                           </td>
                         </tr>
                       </table>
-                      
+                      ${messageSection}
                       <p style="font-size: 16px; color: #4b5563; line-height: 1.6; margin: 16px 0;">Click the button below to accept the invitation and start collaborating:</p>
                       
                       <!-- Button -->

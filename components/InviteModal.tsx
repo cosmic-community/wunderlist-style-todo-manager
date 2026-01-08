@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X, Mail, Loader2, CheckCircle, AlertCircle, UserPlus } from 'lucide-react'
+import { X, Mail, Loader2, CheckCircle, AlertCircle, UserPlus, MessageSquare } from 'lucide-react'
 
 interface InviteModalProps {
   listId: string
@@ -11,6 +11,7 @@ interface InviteModalProps {
 
 export default function InviteModal({ listId, listName, onClose }: InviteModalProps) {
   const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
@@ -24,7 +25,7 @@ export default function InviteModal({ listId, listName, onClose }: InviteModalPr
       const response = await fetch('/api/lists/invite', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, listId })
+        body: JSON.stringify({ email, listId, message: message.trim() || undefined })
       })
 
       const data = await response.json()
@@ -92,7 +93,7 @@ export default function InviteModal({ listId, listName, onClose }: InviteModalPr
               )}
 
               {/* Email Input */}
-              <div className="mb-6">
+              <div className="mb-4">
                 <label htmlFor="invite-email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Email address
                 </label>
@@ -106,6 +107,25 @@ export default function InviteModal({ listId, listName, onClose }: InviteModalPr
                     className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
                     placeholder="colleague@example.com"
                     required
+                  />
+                </div>
+              </div>
+
+              {/* Personal Message Input */}
+              <div className="mb-6">
+                <label htmlFor="invite-message" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Personal message <span className="text-gray-400 font-normal">(optional)</span>
+                </label>
+                <div className="relative">
+                  <MessageSquare className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                  <textarea
+                    id="invite-message"
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 dark:text-white resize-none"
+                    placeholder="Add a personal note to your invitation..."
+                    rows={3}
+                    maxLength={500}
                   />
                 </div>
                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">

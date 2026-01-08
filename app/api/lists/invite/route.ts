@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const { email, listId } = await request.json()
+    const { email, listId, message } = await request.json()
     
     if (!email || !listId) {
       return NextResponse.json(
@@ -29,6 +29,14 @@ export async function POST(request: NextRequest) {
     if (!emailRegex.test(email)) {
       return NextResponse.json(
         { error: 'Invalid email format' },
+        { status: 400 }
+      )
+    }
+    
+    // Validate message length if provided
+    if (message && typeof message === 'string' && message.length > 500) {
+      return NextResponse.json(
+        { error: 'Message must be 500 characters or less' },
         { status: 400 }
       )
     }
@@ -85,13 +93,14 @@ export async function POST(request: NextRequest) {
     // Add user to list's shared_with
     await addUserToList(listId, invitedUser.id)
     
-    // Send invite email
+    // Send invite email with optional personal message
     const emailSent = await sendInviteEmail(
       email,
       session.user.display_name,
       list.metadata.name,
       list.metadata.color || '#3b82f6',
-      verificationCode
+      verificationCode,
+      typeof message === 'string' ? message.trim() : undefined
     )
     
     if (!emailSent) {
