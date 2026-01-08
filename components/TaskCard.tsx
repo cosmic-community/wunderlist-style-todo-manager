@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Task, List } from '@/types'
 import { Trash2 } from 'lucide-react'
 import EditTaskModal from '@/components/EditTaskModal'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface TaskCardProps {
   task: Task
@@ -41,6 +42,10 @@ export default function TaskCard({
   onOptimisticUpdate,
   onSyncComplete
 }: TaskCardProps) {
+  // Changed: Get checkbox position from user preferences
+  const { user } = useAuth()
+  const checkboxPosition = user?.checkbox_position || 'left'
+  
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
@@ -168,6 +173,46 @@ export default function TaskCard({
   if (isFullyCollapsed) {
     return null
   }
+
+  // Changed: Checkbox component for reuse
+  const CheckboxButton = (
+    <div className="relative flex-shrink-0 flex items-center">
+      {/* Changed: Confetti celebration that radiates outward from center */}
+      {showCelebration && (
+        <div className="absolute inset-0 pointer-events-none z-[5]">
+          {confettiColors.map((color, i) => (
+            <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
+          ))}
+          {confettiColors.map((color, i) => (
+            <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
+          ))}
+        </div>
+      )}
+      
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          handleToggleComplete()
+        }}
+        className="relative z-[1]"
+        aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
+        disabled={isUpdating}
+      >
+        {/* Changed: Circle with proper flex centering - use showCheckmark for visual state */}
+        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
+          showCheckmark
+            ? 'bg-blue-600 border-blue-600'
+            : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+        } ${showCelebration ? 'scale-110 ring-4 ring-blue-200/50 dark:ring-blue-900/50' : ''}`}>
+          {showCheckmark && (
+            <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+              <path d="M5 13l4 4L19 7"></path>
+            </svg>
+          )}
+        </div>
+      </button>
+    </div>
+  )
   
   return (
     <>
@@ -191,46 +236,13 @@ export default function TaskCard({
                 // Changed: Add margin-bottom that transitions to 0 for smoother collapse
                 marginBottom: isCollapsing ? '-8px' : '0px',
                 transition: 'all 500ms cubic-bezier(0.4, 0, 0.2, 1)',
+                // Changed: Reverse flex direction when checkbox is on right
+                flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
               }}
               onClick={handleCardClick}
             >
               {/* Changed: Checkbox with confetti positioned around it - allow overflow */}
-              <div className="relative flex-shrink-0 flex items-center">
-                {/* Changed: Confetti celebration that radiates outward from center */}
-                {showCelebration && (
-                  <div className="absolute inset-0 pointer-events-none z-[5]">
-                    {confettiColors.map((color, i) => (
-                      <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
-                    ))}
-                    {confettiColors.map((color, i) => (
-                      <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
-                    ))}
-                  </div>
-                )}
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleToggleComplete()
-                  }}
-                  className="relative z-[1]"
-                  aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
-                  disabled={isUpdating}
-                >
-                  {/* Changed: Circle with proper flex centering - use showCheckmark for visual state */}
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
-                    showCheckmark
-                      ? 'bg-blue-600 border-blue-600'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
-                  } ${showCelebration ? 'scale-110 ring-4 ring-blue-200/50 dark:ring-blue-900/50' : ''}`}>
-                    {showCheckmark && (
-                      <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M5 13l4 4L19 7"></path>
-                      </svg>
-                    )}
-                  </div>
-                </button>
-              </div>
+              {CheckboxButton}
               
               {/* Title - use showCheckmark for visual styling */}
               <span className={`flex-1 text-base transition-all duration-300 ease-out ${

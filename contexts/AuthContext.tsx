@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import { AuthUser } from '@/types'
+import { AuthUser, CheckboxPosition, ColorTheme } from '@/types'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -12,6 +12,9 @@ interface AuthContextType {
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   updateUser: (updates: Partial<AuthUser>) => void
+  // Changed: Added preference update methods
+  updateCheckboxPosition: (position: CheckboxPosition) => Promise<{ success: boolean; error?: string }>
+  updateColorTheme: (theme: ColorTheme) => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -96,6 +99,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Changed: Added updateCheckboxPosition method
+  const updateCheckboxPosition = async (position: CheckboxPosition) => {
+    try {
+      const response = await fetch('/api/auth/update-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checkbox_position: position })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        setUser(prev => prev ? { ...prev, checkbox_position: position } : null)
+        return { success: true }
+      }
+      
+      return { success: false, error: data.error || 'Failed to update preference' }
+    } catch {
+      return { success: false, error: 'Network error' }
+    }
+  }
+
+  // Changed: Added updateColorTheme method
+  const updateColorTheme = async (theme: ColorTheme) => {
+    try {
+      const response = await fetch('/api/auth/update-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ color_theme: theme })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        setUser(prev => prev ? { ...prev, color_theme: theme } : null)
+        return { success: true }
+      }
+      
+      return { success: false, error: data.error || 'Failed to update preference' }
+    } catch {
+      return { success: false, error: 'Network error' }
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -105,7 +152,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signup,
       logout,
       refreshUser,
-      updateUser
+      updateUser,
+      updateCheckboxPosition,
+      updateColorTheme
     }}>
       {children}
     </AuthContext.Provider>
