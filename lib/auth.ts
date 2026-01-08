@@ -23,7 +23,8 @@ export function generateVerificationCode(): string {
   return code
 }
 
-export async function createSession(user: AuthUser): Promise<string> {
+// Changed: Added createToken function that only creates a JWT token without setting cookie
+export async function createToken(user: AuthUser): Promise<string> {
   const token = await new SignJWT({ 
     id: user.id,
     email: user.email,
@@ -34,6 +35,11 @@ export async function createSession(user: AuthUser): Promise<string> {
     .setExpirationTime('7d')
     .sign(JWT_SECRET)
 
+  return token
+}
+
+// Changed: Added setAuthCookie function that only sets the cookie
+export async function setAuthCookie(token: string): Promise<void> {
   const cookieStore = await cookies()
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
@@ -42,7 +48,17 @@ export async function createSession(user: AuthUser): Promise<string> {
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: '/'
   })
+}
 
+// Changed: Added clearAuthCookie function to clear the auth cookie
+export async function clearAuthCookie(): Promise<void> {
+  const cookieStore = await cookies()
+  cookieStore.delete(COOKIE_NAME)
+}
+
+export async function createSession(user: AuthUser): Promise<string> {
+  const token = await createToken(user)
+  await setAuthCookie(token)
   return token
 }
 
@@ -73,29 +89,11 @@ export async function getSession(): Promise<Session | null> {
 
 // Changed: Added updateSession function to update user data in session
 export async function updateSession(user: AuthUser): Promise<string> {
-  const token = await new SignJWT({ 
-    id: user.id,
-    email: user.email,
-    display_name: user.display_name,
-    email_verified: user.email_verified
-  })
-    .setProtectedHeader({ alg: 'HS256' })
-    .setExpirationTime('7d')
-    .sign(JWT_SECRET)
-
-  const cookieStore = await cookies()
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: '/'
-  })
-
+  const token = await createToken(user)
+  await setAuthCookie(token)
   return token
 }
 
 export async function clearSession(): Promise<void> {
-  const cookieStore = await cookies()
-  cookieStore.delete(COOKIE_NAME)
+  await clearAuthCookie()
 }
