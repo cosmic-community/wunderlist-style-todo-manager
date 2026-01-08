@@ -7,8 +7,9 @@ import { Menu, X, CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlu
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
-import InviteModal from './InviteModal' // Changed: Added InviteModal import
+import InviteModal from './InviteModal'
 import SkeletonLoader from './SkeletonLoader'
+import UserMenu from './UserMenu' // Changed: Added UserMenu import
 import { useAuth } from '@/contexts/AuthContext'
 
 interface MobileHeaderProps {
@@ -24,7 +25,7 @@ interface MobileHeaderProps {
 export default function MobileHeader({ lists, currentList, isLoading = false, onListDeleted, onListCreated, onListUpdated, onListClick }: MobileHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [editingList, setEditingList] = useState<List | null>(null)
-  const [invitingList, setInvitingList] = useState<List | null>(null) // Changed: Added invitingList state
+  const [invitingList, setInvitingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated } = useAuth()
@@ -132,8 +133,12 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-6">
-              {/* Changed: Show auth buttons and demo notice if not authenticated */}
-              {!isAuthenticated && (
+              {/* Changed: Show user menu if authenticated, auth buttons with demo notice if not */}
+              {isAuthenticated ? (
+                <div className="mb-4 -mx-3">
+                  <UserMenu />
+                </div>
+              ) : (
                 <div className="mb-4">
                   {/* Changed: Added demo experience notice for mobile */}
                   <div className="mb-3 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
