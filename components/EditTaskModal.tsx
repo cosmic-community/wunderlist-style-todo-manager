@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X } from 'lucide-react'
 import type { Task, List, TaskPriority } from '@/types'
 
@@ -22,6 +22,26 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
       : task.metadata.list || ''
   )
   const [isLoading, setIsLoading] = useState(false)
+  const modalRef = useRef<HTMLDivElement>(null)
+
+  // Changed: Add escape key handler
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [onClose])
+
+  // Changed: Add click outside handler
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+      onClose()
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,9 +83,15 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      onClick={handleBackdropClick}
+    >
       {/* Changed: Improved responsive modal with fixed header/footer and scrollable content */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700">
+      <div 
+        ref={modalRef}
+        className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700"
+      >
         {/* Changed: Fixed header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Edit Task</h2>
