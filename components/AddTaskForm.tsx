@@ -29,6 +29,9 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     
     setIsSubmitting(true)
     
+    // Changed: Use list ID instead of list object for consistency
+    const listId = defaultList?.id || ''
+    
     // Create optimistic task with temporary ID
     const optimisticTask: Task = {
       id: `temp-${Date.now()}`,
@@ -40,7 +43,7 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
       metadata: {
         title: title,
         completed: false,
-        list: defaultList
+        list: listId // Changed: Use list ID string instead of list object
       }
     }
     
@@ -67,7 +70,7 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: taskTitle,
-          list: defaultList?.id || ''
+          list: listId // Changed: Use list ID string instead of defaultList?.id
         })
       })
     } catch (error) {
