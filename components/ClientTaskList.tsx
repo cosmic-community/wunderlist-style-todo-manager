@@ -208,19 +208,19 @@ export default function ClientTaskList({ listId, listSlug }: ClientTaskListProps
       <div className="flex flex-col h-full">
         {/* Skeleton task list matching the loaded UI structure */}
         <div className="flex-1 pb-24 space-y-6" style={{ overflow: 'visible' }}>
-          {/* Changed: Show waiting message from agent branch when polling for list */}
+          {/* Changed: Show waiting message when polling for list */}
           {isWaitingForList && (
             <p className="text-sm text-gray-500 dark:text-gray-400 animate-pulse text-center">
               Setting up your list...
             </p>
           )}
           <div className="space-y-4" style={{ overflow: 'visible' }}>
-            {/* Changed: Use 5 skeleton items from base branch for initial load, 3 when waiting for list */}
+            {/* Changed: Use 5 skeleton items for initial load, 3 when waiting for list */}
             <SkeletonLoader variant="task" count={isWaitingForList ? 3 : 5} />
           </div>
         </div>
         
-        {/* Changed: Fixed add task form skeleton at bottom - from base branch */}
+        {/* Changed: Fixed add task form skeleton at bottom */}
         <div className="fixed bottom-0 left-0 right-0 md:left-64 p-4 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 z-20">
           <div className="max-w-2xl mx-auto">
             <div className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 border border-gray-200 dark:border-gray-800 animate-pulse">
