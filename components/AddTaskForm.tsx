@@ -111,6 +111,8 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
+          // Changed: Added autoFocus for immediate focus on mount/re-render
+          autoFocus
           // Changed: Added enterKeyHint to show "done" or appropriate key on mobile
           enterKeyHint="done"
         />
