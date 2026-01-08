@@ -10,9 +10,11 @@ interface ClientSidebarProps {
   onListChange?: (slug?: string) => void
   // Changed: Add callback for creating state to show loading in main area
   onCreatingStateChange?: (isCreating: boolean) => void
+  // Changed: Add callback for refreshing list data
+  onListRefresh?: () => void
 }
 
-export default function ClientSidebar({ currentListSlug, onListChange, onCreatingStateChange }: ClientSidebarProps) {
+export default function ClientSidebar({ currentListSlug, onListChange, onCreatingStateChange, onListRefresh }: ClientSidebarProps) {
   const [lists, setLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(true)
   // Changed: Track lists that are still syncing (have temporary IDs)
@@ -99,6 +101,11 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
           : list
       )
     )
+    
+    // Changed: Trigger parent refresh when list is updated
+    if (onListRefresh) {
+      onListRefresh()
+    }
   }
 
   const handleListDeleted = (listId: string) => {
