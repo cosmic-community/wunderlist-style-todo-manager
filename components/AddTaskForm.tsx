@@ -54,9 +54,8 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     const taskTitle = title
     setTitle('')
     
-    // Changed: Immediately refocus the input to keep mobile keyboard open
+    // Changed: Immediately refocus the input after clearing - don't wait for API
     // Using requestAnimationFrame ensures this happens after React's state update
-    // but before the browser has a chance to dismiss the keyboard
     requestAnimationFrame(() => {
       if (inputRef.current) {
         inputRef.current.focus()
@@ -106,11 +105,13 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
           onKeyDown={handleKeyDown}
           placeholder="Add a Task"
           className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none text-base"
-          disabled={isSubmitting}
+          // Changed: Removed disabled={isSubmitting} to allow focus during API request
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
+          // Changed: Added autoFocus for immediate focus on mount/re-render
+          autoFocus
           // Changed: Added enterKeyHint to show "done" or appropriate key on mobile
           enterKeyHint="done"
         />

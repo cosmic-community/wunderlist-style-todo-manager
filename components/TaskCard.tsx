@@ -180,7 +180,8 @@ export default function TaskCard({
             : 'grid-rows-[1fr] opacity-100'
         }`}
       >
-        <div className="overflow-hidden">
+        {/* Changed: Removed overflow-hidden to allow confetti to be visible outside the card */}
+        <div className="min-h-0">
           <div className="relative">
             <div 
               className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 ${
@@ -193,11 +194,11 @@ export default function TaskCard({
               }}
               onClick={handleCardClick}
             >
-              {/* Changed: Checkbox with confetti positioned around it - contained overflow */}
-              <div className="relative flex-shrink-0 flex items-center overflow-visible">
+              {/* Changed: Checkbox with confetti positioned around it - allow overflow */}
+              <div className="relative flex-shrink-0 flex items-center">
                 {/* Changed: Confetti celebration that radiates outward from center */}
                 {showCelebration && (
-                  <div className="absolute inset-0 pointer-events-none z-[5] overflow-visible">
+                  <div className="absolute inset-0 pointer-events-none z-[5]">
                     {confettiColors.map((color, i) => (
                       <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
                     ))}
