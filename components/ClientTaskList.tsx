@@ -51,9 +51,11 @@ export default function ClientTaskList({ listSlug }: ClientTaskListProps) {
   }, [listSlug])
 
   // Changed: Fetch tasks - takes listId as parameter to avoid dependency on list state
+  // Changed: Fixed query parameter to use 'list' instead of 'listId' to match API route
   const fetchTasksForList = useCallback(async (listId: string | null) => {
     try {
-      const url = listSlug && listId ? `/api/tasks?listId=${listId}` : '/api/tasks'
+      // Changed: Use 'list' query param to match the API route expectation
+      const url = listSlug && listId ? `/api/tasks?list=${listId}` : '/api/tasks'
       const response = await fetch(url)
       
       if (!response.ok) {
