@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { LogOut, User, ChevronDown } from 'lucide-react'
+import { LogOut, User, ChevronDown, Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function UserMenu() {
   const { user, logout } = useAuth()
@@ -56,6 +57,16 @@ export default function UserMenu() {
               {user.email}
             </p>
           </div>
+          
+          {/* Changed: Added Settings link */}
+          <Link
+            href="/settings"
+            onClick={() => setIsOpen(false)}
+            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            <Settings className="w-4 h-4" />
+            Settings
+          </Link>
           
           <button
             onClick={handleLogout}

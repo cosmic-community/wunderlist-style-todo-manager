@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { CheckSquare, CheckCircle, AlertCircle, Loader2 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 function VerifyEmailContent() {
   const [code, setCode] = useState('')
@@ -14,6 +15,7 @@ function VerifyEmailContent() {
   
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { refreshUser } = useAuth()
   
   const emailParam = searchParams.get('email')
   const codeParam = searchParams.get('code')
@@ -26,6 +28,7 @@ function VerifyEmailContent() {
       setCode(codeParam)
       handleVerify(codeParam, emailParam)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [codeParam, emailParam, isVerified, autoVerifying])
 
   const handleVerify = async (verifyCode?: string, verifyEmail?: string) => {
@@ -51,6 +54,8 @@ function VerifyEmailContent() {
       
       if (response.ok) {
         setIsVerified(true)
+        // Changed: Refresh the auth context to get updated user data
+        await refreshUser()
         // Redirect after a short delay
         setTimeout(() => {
           router.push('/')

@@ -11,6 +11,7 @@ interface AuthContextType {
   signup: (email: string, password: string, displayName: string) => Promise<{ success: boolean; error?: string }>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
+  updateUser: (updates: Partial<AuthUser>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -88,6 +89,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Changed: Added updateUser to update user state without fetching from server
+  const updateUser = (updates: Partial<AuthUser>) => {
+    if (user) {
+      setUser({ ...user, ...updates })
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -96,7 +104,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       signup,
       logout,
-      refreshUser
+      refreshUser,
+      updateUser
     }}>
       {children}
     </AuthContext.Provider>
