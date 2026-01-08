@@ -143,8 +143,8 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   
   return (
     <>
-      {/* Changed: Task list with proper spacing - removed overflow visible that caused issues */}
-      <div className="space-y-2 pb-4">
+      {/* Changed: Task list with proper spacing - added pb-24 to ensure last item is accessible above fixed add task form */}
+      <div className="space-y-2 pb-24">
         {/* Pending Tasks */}
         {pendingTasks.map((task) => (
           <TaskCard 
