@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus } from 'lucide-react'
+import { Plus, ChevronRight } from 'lucide-react'
 import TaskCard from './TaskCard'
 import AddTaskForm from './AddTaskForm'
 import type { Task, List } from '@/types'
@@ -16,6 +16,8 @@ export default function ClientTaskList({ listId, listSlug }: ClientTaskListProps
   const [lists, setLists] = useState<List[]>([])
   const [showAddForm, setShowAddForm] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  // Changed: Add state for collapsible completed section
+  const [showCompleted, setShowCompleted] = useState(false)
 
   // Fetch tasks and lists
   useEffect(() => {
@@ -119,23 +121,33 @@ export default function ClientTaskList({ listId, listSlug }: ClientTaskListProps
         />
       )}
 
+      {/* Changed: Collapsible completed section */}
       {completedTasks.length > 0 && (
         <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
-          <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-4">
-            Completed ({completedTasks.length})
-          </h3>
-          <div className="space-y-4">
-            {completedTasks.map(task => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                lists={lists}
-                onOptimisticToggle={handleOptimisticToggle}
-                onOptimisticDelete={handleOptimisticDelete}
-                onOptimisticUpdate={handleOptimisticUpdate}
-              />
-            ))}
-          </div>
+          <button
+            onClick={() => setShowCompleted(!showCompleted)}
+            className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors py-2 w-full"
+          >
+            <ChevronRight className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
+            <span className="text-sm font-medium">
+              Completed ({completedTasks.length})
+            </span>
+          </button>
+          
+          {showCompleted && (
+            <div className="space-y-4 mt-2">
+              {completedTasks.map(task => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  lists={lists}
+                  onOptimisticToggle={handleOptimisticToggle}
+                  onOptimisticDelete={handleOptimisticDelete}
+                  onOptimisticUpdate={handleOptimisticUpdate}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
