@@ -166,7 +166,9 @@ export async function sendInviteEmail(
                           <td style="background-color: #f9fafb; border-radius: 8px; padding: 16px;">
                             <table role="presentation" cellpadding="0" cellspacing="0">
                               <tr>
-                                <td style="width: 12px; height: 12px; background-color: ${colorToUse}; border-radius: 50%;"></td>
+                                <td style="width: 12px; height: 12px; vertical-align: middle;">
+                                  <div style="width: 12px; height: 12px; background-color: ${colorToUse}; border-radius: 50%; display: block;"></div>
+                                </td>
                                 <td style="padding-left: 8px; font-weight: 600; color: #111827; font-size: 16px;">${listName}</td>
                               </tr>
                             </table>
