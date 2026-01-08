@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { List } from '@/types'
-import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
+import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
@@ -16,17 +16,19 @@ interface SidebarProps {
   lists: List[]
   currentListSlug?: string
   isLoading?: boolean
-  // Changed: Add syncingListSlugs to track lists that are still being created
+  // Changed: Keep syncingListSlugs for internal tracking but don't show visual indicator
   syncingListSlugs?: Set<string>
   onListCreated?: (list: List) => void
   onListReplaced?: (tempId: string, realList: List) => void
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
   onListDeleted?: (listId: string) => void
   onListClick?: (slug?: string) => void
-  onRefresh?: () => void // Changed: Added refresh callback
+  onRefresh?: () => void
+  // Changed: Add callback for creating state to show loading in main area
+  onCreatingStateChange?: (isCreating: boolean) => void
 }
 
-export default function Sidebar({ lists, currentListSlug, isLoading = false, syncingListSlugs = new Set(), onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick, onRefresh }: SidebarProps) {
+export default function Sidebar({ lists, currentListSlug, isLoading = false, syncingListSlugs = new Set(), onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick, onRefresh, onCreatingStateChange }: SidebarProps) {
   const [editingList, setEditingList] = useState<List | null>(null)
   const [invitingList, setInvitingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -106,17 +108,26 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     })
   }
 
-  // Changed: Handle list navigation - prevent navigation if list is still syncing
+  // Changed: Handle list navigation - allow navigation even for syncing lists (they'll load once ready)
   const handleListNavigation = (e: React.MouseEvent, slug?: string) => {
     e.preventDefault()
     
-    // Changed: Don't navigate if list is still syncing
-    if (slug && syncingListSlugs.has(slug)) {
-      return // List is still being created, don't navigate
-    }
-    
     if (onListClick) {
       onListClick(slug)
+    }
+  }
+
+  // Changed: Handle navigation to newly created list
+  const handleNavigateToList = (slug: string) => {
+    if (onListClick) {
+      onListClick(slug)
+    }
+  }
+
+  // Changed: Handle creating state change
+  const handleCreatingStateChange = (isCreating: boolean) => {
+    if (onCreatingStateChange) {
+      onCreatingStateChange(isCreating)
     }
   }
 
@@ -196,34 +207,26 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                 </div>
                 
                 {lists.map((list) => {
-                  // Changed: Check if this list is still syncing
+                  // Changed: Don't show any syncing indicator - list appears normal
                   const isSyncing = syncingListSlugs.has(list.slug)
                   
                   return (
                     <div key={list.id} className="relative group">
                       <button
                         onClick={(e) => handleListNavigation(e, list.slug)}
-                        disabled={isSyncing}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          isSyncing
-                            ? 'opacity-60 cursor-not-allowed'
-                            : currentListSlug === list.slug
-                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          currentListSlug === list.slug
+                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                       >
-                        {/* Changed: Show spinner if syncing, otherwise show color dot */}
-                        {isSyncing ? (
-                          <Loader2 className="w-4 h-4 animate-spin text-gray-400 flex-shrink-0" />
-                        ) : (
-                          <div 
-                            className="w-4 h-4 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
-                          />
-                        )}
+                        {/* Changed: Always show color dot, no spinner */}
+                        <div 
+                          className="w-4 h-4 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
+                        />
                         <span className="font-medium flex-1 truncate text-left">
                           {list.title}
-                          {isSyncing && <span className="text-xs text-gray-400 ml-1">(Creating...)</span>}
                         </span>
                         
                         {/* More options button - hide if syncing */}
@@ -281,6 +284,8 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
               <CreateListForm 
                 onListCreated={handleListCreated}
                 onListReplaced={handleListReplaced}
+                onCreatingStateChange={handleCreatingStateChange}
+                onNavigateToList={handleNavigateToList}
               />
             </div>
           </nav>
@@ -294,7 +299,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
           onClose={() => setEditingList(null)}
           onOptimisticUpdate={handleOptimisticUpdate}
           onOptimisticDelete={handleOptimisticDelete}
-          onRefresh={onRefresh} // Changed: Pass refresh callback
+          onRefresh={onRefresh}
         />
       )}
 

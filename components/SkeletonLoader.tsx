@@ -1,7 +1,7 @@
 'use client'
 
 interface SkeletonLoaderProps {
-  variant?: 'task' | 'list' | 'header' | 'sidebar' | 'text'
+  variant?: 'task' | 'list' | 'header' | 'sidebar' | 'text' | 'creating-list'
   count?: number
   className?: string
 }
@@ -68,6 +68,21 @@ export default function SkeletonLoader({ variant = 'task', count = 1, className 
         {skeletons.map((i) => (
           <div key={i} className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-full mb-2" />
         ))}
+      </div>
+    )
+  }
+
+  // Changed: Add creating-list variant for showing loading state when creating a new list
+  if (variant === 'creating-list') {
+    return (
+      <div className={`flex flex-col items-center justify-center py-16 ${className}`}>
+        <div className="relative">
+          {/* Animated circles */}
+          <div className="w-16 h-16 rounded-full border-4 border-blue-200 dark:border-blue-900 animate-pulse" />
+          <div className="absolute inset-0 w-16 h-16 rounded-full border-4 border-transparent border-t-blue-600 animate-spin" />
+        </div>
+        <p className="mt-4 text-gray-600 dark:text-gray-400 font-medium">Creating your list...</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-500">This will only take a moment</p>
       </div>
     )
   }

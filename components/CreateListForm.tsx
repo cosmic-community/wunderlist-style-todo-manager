@@ -8,6 +8,10 @@ interface CreateListFormProps {
   onListCreated: (list: List) => void
   // Changed: Add callback to replace optimistic list with real one
   onListReplaced?: (tempId: string, realList: List) => void
+  // Changed: Add callback to notify when list creation starts/ends
+  onCreatingStateChange?: (isCreating: boolean) => void
+  // Changed: Add callback for navigation after successful creation
+  onNavigateToList?: (slug: string) => void
 }
 
 const PRESET_COLORS = [
@@ -21,7 +25,7 @@ const PRESET_COLORS = [
   '#84cc16', // Lime
 ]
 
-export default function CreateListForm({ onListCreated, onListReplaced }: CreateListFormProps) {
+export default function CreateListForm({ onListCreated, onListReplaced, onCreatingStateChange, onNavigateToList }: CreateListFormProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
@@ -42,12 +46,16 @@ export default function CreateListForm({ onListCreated, onListReplaced }: Create
 
     setIsSubmitting(true)
     setError('')
+    
+    // Changed: Notify parent that creation is starting
+    onCreatingStateChange?.(true)
 
     // Changed: Create optimistic list with a temporary ID
     const tempId = `temp-${Date.now()}`
+    const tempSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
     const optimisticList: List = {
       id: tempId,
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+      slug: tempSlug,
       title: name.trim(),
       type: 'lists',
       created_at: new Date().toISOString(),
@@ -85,8 +93,14 @@ export default function CreateListForm({ onListCreated, onListReplaced }: Create
 
       // Changed: Get the real list from API and replace the optimistic one
       const data = await response.json()
-      if (data.list && onListReplaced) {
-        onListReplaced(tempId, data.list)
+      if (data.list) {
+        if (onListReplaced) {
+          onListReplaced(tempId, data.list)
+        }
+        // Changed: Navigate to the new list after successful creation
+        if (onNavigateToList) {
+          onNavigateToList(data.list.slug)
+        }
       }
     } catch (err) {
       console.error('Error creating list:', err)
@@ -95,6 +109,8 @@ export default function CreateListForm({ onListCreated, onListReplaced }: Create
       // For now, the polling will correct it on the next fetch
     } finally {
       setIsSubmitting(false)
+      // Changed: Notify parent that creation is complete
+      onCreatingStateChange?.(false)
     }
   }
 
@@ -195,7 +211,7 @@ export default function CreateListForm({ onListCreated, onListReplaced }: Create
             disabled={!name.trim() || isSubmitting}
             className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? 'Creating...' : 'Create'}
+            Create
           </button>
         </div>
       </form>
