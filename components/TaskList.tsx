@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useState, useEffect, useRef } from 'react'
-import { Task, List } from '@/types'
+import { Task, List, CheckboxPosition } from '@/types'
 import TaskCard from '@/components/TaskCard'
 import AddTaskForm from '@/components/AddTaskForm'
 import EmptyState from '@/components/EmptyState'
@@ -11,6 +11,7 @@ interface TaskListProps {
   initialTasks: Task[]
   lists: List[]
   listSlug?: string
+  checkboxPosition?: CheckboxPosition // Changed: Added checkbox position prop
 }
 
 // Track pending state changes for a task
@@ -19,7 +20,7 @@ interface PendingTaskState {
   // Add other fields here as needed for other optimistic updates
 }
 
-export default function TaskList({ initialTasks, lists, listSlug }: TaskListProps) {
+export default function TaskList({ initialTasks, lists, listSlug, checkboxPosition = 'left' }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const mountedRef = useRef(true)
@@ -155,6 +156,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
             onOptimisticDelete={handleOptimisticDelete}
             onOptimisticUpdate={handleOptimisticUpdate}
             onSyncComplete={clearPendingState}
+            checkboxPosition={checkboxPosition} // Changed: Pass checkbox position to TaskCard
           />
         ))}
         
@@ -180,6 +182,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
                     onOptimisticDelete={handleOptimisticDelete}
                     onOptimisticUpdate={handleOptimisticUpdate}
                     onSyncComplete={clearPendingState}
+                    checkboxPosition={checkboxPosition} // Changed: Pass checkbox position to TaskCard
                   />
                 ))}
               </div>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Task, List } from '@/types'
+import { Task, List, CheckboxPosition } from '@/types'
 import { Trash2 } from 'lucide-react'
 import EditTaskModal from '@/components/EditTaskModal'
 
@@ -12,6 +12,7 @@ interface TaskCardProps {
   onOptimisticDelete: (taskId: string) => void
   onOptimisticUpdate: (taskId: string, updates: Partial<Task['metadata']>) => void
   onSyncComplete?: (taskId: string) => void
+  checkboxPosition?: CheckboxPosition // Changed: Added checkbox position prop
 }
 
 // Changed: Simplified confetti particle without overflow issues
@@ -39,7 +40,8 @@ export default function TaskCard({
   onOptimisticToggle,
   onOptimisticDelete,
   onOptimisticUpdate,
-  onSyncComplete
+  onSyncComplete,
+  checkboxPosition = 'left' // Changed: Default to left
 }: TaskCardProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -168,6 +170,58 @@ export default function TaskCard({
   if (isFullyCollapsed) {
     return null
   }
+
+  // Changed: Checkbox component to reuse in both positions
+  const CheckboxButton = (
+    <div className="relative flex-shrink-0 flex items-center">
+      {/* Changed: Confetti celebration that radiates outward from center */}
+      {showCelebration && (
+        <div className="absolute inset-0 pointer-events-none z-[5]">
+          {confettiColors.map((color, i) => (
+            <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
+          ))}
+          {confettiColors.map((color, i) => (
+            <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
+          ))}
+        </div>
+      )}
+      
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          handleToggleComplete()
+        }}
+        className="relative z-[1]"
+        aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
+        disabled={isUpdating}
+      >
+        {/* Changed: Circle with proper flex centering - use showCheckmark for visual state */}
+        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
+          showCheckmark
+            ? 'bg-blue-600 border-blue-600'
+            : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
+        } ${showCelebration ? 'scale-110 ring-4 ring-blue-200/50 dark:ring-blue-900/50' : ''}`}>
+          {showCheckmark && (
+            <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+              <path d="M5 13l4 4L19 7"></path>
+            </svg>
+          )}
+        </div>
+      </button>
+    </div>
+  )
+
+  // Changed: Delete button component
+  const DeleteButton = task.metadata.completed && !showCelebration && (
+    <button
+      onClick={handleDelete}
+      className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+      aria-label="Delete task"
+      disabled={isDeleting}
+    >
+      <Trash2 className="w-4 h-4" />
+    </button>
+  )
   
   return (
     <>
@@ -194,43 +248,8 @@ export default function TaskCard({
               }}
               onClick={handleCardClick}
             >
-              {/* Changed: Checkbox with confetti positioned around it - allow overflow */}
-              <div className="relative flex-shrink-0 flex items-center">
-                {/* Changed: Confetti celebration that radiates outward from center */}
-                {showCelebration && (
-                  <div className="absolute inset-0 pointer-events-none z-[5]">
-                    {confettiColors.map((color, i) => (
-                      <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
-                    ))}
-                    {confettiColors.map((color, i) => (
-                      <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
-                    ))}
-                  </div>
-                )}
-                
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleToggleComplete()
-                  }}
-                  className="relative z-[1]"
-                  aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
-                  disabled={isUpdating}
-                >
-                  {/* Changed: Circle with proper flex centering - use showCheckmark for visual state */}
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
-                    showCheckmark
-                      ? 'bg-blue-600 border-blue-600'
-                      : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
-                  } ${showCelebration ? 'scale-110 ring-4 ring-blue-200/50 dark:ring-blue-900/50' : ''}`}>
-                    {showCheckmark && (
-                      <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
-                        <path d="M5 13l4 4L19 7"></path>
-                      </svg>
-                    )}
-                  </div>
-                </button>
-              </div>
+              {/* Changed: Conditionally render checkbox on left or right based on preference */}
+              {checkboxPosition === 'left' && CheckboxButton}
               
               {/* Title - use showCheckmark for visual styling */}
               <span className={`flex-1 text-base transition-all duration-300 ease-out ${
@@ -239,17 +258,14 @@ export default function TaskCard({
                 {task.metadata.title}
               </span>
               
-              {/* Delete button - only show for completed tasks that aren't celebrating */}
-              {task.metadata.completed && !showCelebration && (
-                <button
-                  onClick={handleDelete}
-                  className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                  aria-label="Delete task"
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
+              {/* Changed: Show delete button before checkbox when checkbox is on right */}
+              {checkboxPosition === 'right' && DeleteButton}
+              
+              {/* Changed: Checkbox on right side if preference is set */}
+              {checkboxPosition === 'right' && CheckboxButton}
+              
+              {/* Changed: Delete button after title when checkbox is on left (original behavior) */}
+              {checkboxPosition === 'left' && DeleteButton}
             </div>
           </div>
         </div>

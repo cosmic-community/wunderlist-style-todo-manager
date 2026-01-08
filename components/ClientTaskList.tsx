@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Task, List } from '@/types'
 import TaskList from './TaskList'
 import SkeletonLoader from './SkeletonLoader'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ClientTaskListProps {
   listSlug?: string
@@ -19,6 +20,9 @@ export default function ClientTaskList({ listSlug, refreshKey }: ClientTaskListP
   // Changed: Track retry attempts for newly created lists
   const [listRetryCount, setListRetryCount] = useState(0)
   const maxRetries = 10
+  
+  // Changed: Get checkbox position from auth context
+  const { checkboxPosition } = useAuth()
   
   // Changed: Use refs to track fetch state and prevent infinite loops
   const isFetchingRef = useRef(false)
@@ -180,13 +184,14 @@ export default function ClientTaskList({ listSlug, refreshKey }: ClientTaskListP
     )
   }
 
-  // Changed: Use TaskList with correct props interface
+  // Changed: Use TaskList with correct props interface including checkboxPosition
   return (
     <div>
       <TaskList 
         initialTasks={tasks}
         lists={lists}
         listSlug={listSlug}
+        checkboxPosition={checkboxPosition} // Changed: Pass checkbox position from auth context
       />
     </div>
   )

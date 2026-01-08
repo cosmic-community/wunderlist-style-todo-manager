@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import { AuthUser } from '@/types'
+import { AuthUser, CheckboxPosition } from '@/types'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -12,6 +12,8 @@ interface AuthContextType {
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
   updateUser: (updates: Partial<AuthUser>) => void
+  checkboxPosition: CheckboxPosition // Changed: Added checkbox position getter
+  updateCheckboxPosition: (position: CheckboxPosition) => Promise<{ success: boolean; error?: string }> // Changed: Added checkbox position updater
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -96,6 +98,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Changed: Added checkboxPosition getter with default to 'left'
+  const checkboxPosition: CheckboxPosition = user?.checkbox_position || 'left'
+
+  // Changed: Added updateCheckboxPosition function to update preference
+  const updateCheckboxPosition = async (position: CheckboxPosition) => {
+    try {
+      const response = await fetch('/api/auth/update-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ checkbox_position: position })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        setUser(data.user)
+        return { success: true }
+      }
+
+      return { success: false, error: data.error || 'Failed to update preference' }
+    } catch {
+      return { success: false, error: 'Network error' }
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -105,7 +132,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signup,
       logout,
       refreshUser,
-      updateUser
+      updateUser,
+      checkboxPosition,
+      updateCheckboxPosition
     }}>
       {children}
     </AuthContext.Provider>

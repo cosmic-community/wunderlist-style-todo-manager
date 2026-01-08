@@ -13,8 +13,11 @@ export interface CosmicObject {
 // Priority type for select-dropdown (exact values from content model)
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+// Changed: Added checkbox_position type
+export type CheckboxPosition = 'left' | 'right';
+
 // User object type
-// Changed: Added password_reset_token and password_reset_expires fields for password reset functionality
+// Changed: Added checkbox_position field for user preference on task checkbox placement
 export interface User extends CosmicObject {
   type: 'users';
   metadata: {
@@ -25,6 +28,7 @@ export interface User extends CosmicObject {
     verification_code?: string;
     password_reset_token?: string;
     password_reset_expires?: string;
+    checkbox_position?: CheckboxPosition; // Changed: Added checkbox position preference
   };
 }
 
@@ -102,11 +106,13 @@ export interface UpdateListData {
 }
 
 // Auth types
+// Changed: Added checkbox_position to AuthUser
 export interface AuthUser {
   id: string;
   email: string;
   display_name: string;
   email_verified: boolean;
+  checkbox_position?: CheckboxPosition; // Changed: Added checkbox position preference
 }
 
 export interface AuthSession {

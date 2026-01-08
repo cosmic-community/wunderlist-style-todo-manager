@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send } from 'lucide-react'
+import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send, Settings } from 'lucide-react'
 import Link from 'next/link'
+import { CheckboxPosition } from '@/types'
 
 export default function SettingsPage() {
-  const { user, isLoading: authLoading, isAuthenticated, refreshUser } = useAuth()
+  const { user, isLoading: authLoading, isAuthenticated, refreshUser, checkboxPosition, updateCheckboxPosition } = useAuth()
   const router = useRouter()
   
   // Profile form state
@@ -21,12 +22,23 @@ export default function SettingsPage() {
   const [resetSuccess, setResetSuccess] = useState('')
   const [resetError, setResetError] = useState('')
 
+  // Changed: Checkbox position state
+  const [selectedCheckboxPosition, setSelectedCheckboxPosition] = useState<CheckboxPosition>(checkboxPosition)
+  const [preferenceLoading, setPreferenceLoading] = useState(false)
+  const [preferenceSuccess, setPreferenceSuccess] = useState('')
+  const [preferenceError, setPreferenceError] = useState('')
+
   // Initialize form with user data
   useEffect(() => {
     if (user) {
       setDisplayName(user.display_name)
     }
   }, [user])
+
+  // Changed: Sync checkbox position with auth context
+  useEffect(() => {
+    setSelectedCheckboxPosition(checkboxPosition)
+  }, [checkboxPosition])
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -92,6 +104,28 @@ export default function SettingsPage() {
     }
 
     setResetLoading(false)
+  }
+
+  // Changed: Handler for checkbox position update
+  const handleCheckboxPositionChange = async (position: CheckboxPosition) => {
+    if (position === selectedCheckboxPosition) return
+    
+    setPreferenceError('')
+    setPreferenceSuccess('')
+    setPreferenceLoading(true)
+    setSelectedCheckboxPosition(position) // Optimistic update
+
+    const result = await updateCheckboxPosition(position)
+
+    if (result.success) {
+      setPreferenceSuccess('Preference updated successfully!')
+      setTimeout(() => setPreferenceSuccess(''), 3000)
+    } else {
+      setPreferenceError(result.error || 'Failed to update preference')
+      setSelectedCheckboxPosition(checkboxPosition) // Revert on error
+    }
+
+    setPreferenceLoading(false)
   }
 
   if (authLoading) {
@@ -199,6 +233,112 @@ export default function SettingsPage() {
               )}
             </button>
           </form>
+        </section>
+
+        {/* Changed: Preferences Section - Checkbox Position */}
+        <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+              <Settings className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Preferences</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Customize your task list appearance</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                Checkbox Position
+              </label>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+                Choose where the checkbox appears on each task
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                {/* Left Side Option */}
+                <button
+                  type="button"
+                  onClick={() => handleCheckboxPositionChange('left')}
+                  disabled={preferenceLoading}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    selectedCheckboxPosition === 'left'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedCheckboxPosition === 'left' ? 'bg-blue-600 border-blue-600' : 'border-gray-300 dark:border-gray-600'
+                    }`}>
+                      {selectedCheckboxPosition === 'left' && (
+                        <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                          <path d="M5 13l4 4L19 7"></path>
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Task name here</span>
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    selectedCheckboxPosition === 'left' ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    Left Side
+                  </span>
+                </button>
+
+                {/* Right Side Option */}
+                <button
+                  type="button"
+                  onClick={() => handleCheckboxPositionChange('right')}
+                  disabled={preferenceLoading}
+                  className={`p-4 rounded-xl border-2 transition-all ${
+                    selectedCheckboxPosition === 'right'
+                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">Task name here</span>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                      selectedCheckboxPosition === 'right' ? 'bg-blue-600 border-blue-600' : 'border-gray-300 dark:border-gray-600'
+                    }`}>
+                      {selectedCheckboxPosition === 'right' && (
+                        <svg className="w-3 h-3 text-white" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                          <path d="M5 13l4 4L19 7"></path>
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    selectedCheckboxPosition === 'right' ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'
+                  }`}>
+                    Right Side
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Success/Error Messages for Preferences */}
+            {preferenceSuccess && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{preferenceSuccess}</span>
+              </div>
+            )}
+            {preferenceError && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{preferenceError}</span>
+              </div>
+            )}
+
+            {preferenceLoading && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="w-5 h-5 animate-spin text-blue-600" />
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Password Section - Changed: Replaced form with reset button */}
