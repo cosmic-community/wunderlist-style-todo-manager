@@ -1,190 +1,162 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight } from 'lucide-react'
-import TaskCard from './TaskCard'
-import AddTaskForm from './AddTaskForm'
-import type { Task, List } from '@/types'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { Task, List } from '@/types'
+import TaskList from './TaskList'
+import SkeletonLoader from './SkeletonLoader'
 
 interface ClientTaskListProps {
-  listId?: string
   listSlug?: string
 }
 
-export default function ClientTaskList({ listId, listSlug }: ClientTaskListProps) {
+export default function ClientTaskList({ listSlug }: ClientTaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [lists, setLists] = useState<List[]>([])
+  const [list, setList] = useState<List | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  // Changed: Add state for collapsible completed section
-  const [showCompleted, setShowCompleted] = useState(false)
-  // Changed: Track tasks that are currently celebrating (showing confetti + fade out)
-  const [celebratingTasks, setCelebratingTasks] = useState<Map<string, number>>(new Map())
+  const [error, setError] = useState<string | null>(null)
+  // Changed: Track retry attempts for newly created lists
+  const [listRetryCount, setListRetryCount] = useState(0)
+  const maxRetries = 10
+  
+  // Changed: Use refs to track fetch state and prevent infinite loops
+  const isFetchingRef = useRef(false)
+  const lastListIdRef = useRef<string | null>(null)
+  const hasFetchedTasksRef = useRef(false)
 
-  // Fetch tasks and lists
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true)
-        
-        // Changed: Fetch tasks with listSlug parameter for proper filtering
-        const tasksUrl = listSlug 
-          ? `/api/tasks?listSlug=${listSlug}` 
-          : listId 
-            ? `/api/tasks?list=${listId}` 
-            : '/api/tasks'
-        const tasksResponse = await fetch(tasksUrl)
-        if (tasksResponse.ok) {
-          const tasksData = await tasksResponse.json()
-          setTasks(tasksData.tasks || [])
-        }
-
-        // Fetch lists
-        const listsResponse = await fetch('/api/lists')
-        if (listsResponse.ok) {
-          const listsData = await listsResponse.json()
-          setLists(listsData.lists || [])
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      } finally {
-        setIsLoading(false)
+  // Changed: Fetch lists data - memoized without list dependency
+  const fetchLists = useCallback(async (): Promise<{ found: boolean; foundList: List | null }> => {
+    try {
+      const response = await fetch('/api/lists')
+      if (!response.ok) {
+        throw new Error('Failed to fetch lists')
       }
+      
+      const data = await response.json()
+      setLists(data.lists || [])
+      
+      if (listSlug) {
+        const foundList = data.lists.find((l: List) => l.slug === listSlug)
+        if (foundList) {
+          return { found: true, foundList }
+        }
+        return { found: false, foundList: null }
+      }
+      
+      return { found: true, foundList: null }
+    } catch (err) {
+      console.error('Error fetching lists:', err)
+      return { found: false, foundList: null }
     }
+  }, [listSlug])
 
-    fetchData()
-  }, [listId, listSlug])
+  // Changed: Fetch tasks - takes listId as parameter to avoid dependency on list state
+  const fetchTasksForList = useCallback(async (listId: string | null) => {
+    try {
+      const url = listSlug && listId ? `/api/tasks?listId=${listId}` : '/api/tasks'
+      const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks')
+      }
+      
+      const data = await response.json()
+      setTasks(data.tasks || [])
+    } catch (err) {
+      console.error('Error fetching tasks:', err)
+      setError('Failed to load tasks')
+    }
+  }, [listSlug])
 
-  // Changed: Updated toggle handler to track celebrating tasks with proper timing
-  const handleOptimisticToggle = useCallback((taskId: string) => {
-    setTasks(prev => {
-      const task = prev.find(t => t.id === taskId)
-      if (task) {
-        const newCompletedState = !task.metadata.completed
-        
-        // Changed: If task is becoming completed, add to celebrating map with timestamp
-        if (newCompletedState) {
-          setCelebratingTasks(prevCelebrating => {
-            const newMap = new Map(prevCelebrating)
-            newMap.set(taskId, Date.now())
-            return newMap
-          })
-          
-          // Changed: Increased delay to 1800ms to match TaskCard's full animation duration
-          // TaskCard shows: 1200ms confetti + 500ms collapse + 100ms buffer = 1800ms total
+  // Changed: Single effect for initial load and retry logic - prevents infinite loops
+  useEffect(() => {
+    // Prevent concurrent fetches
+    if (isFetchingRef.current) {
+      return
+    }
+    
+    const loadData = async () => {
+      isFetchingRef.current = true
+      setIsLoading(true)
+      setError(null)
+      
+      const { found, foundList } = await fetchLists()
+      
+      if (listSlug && !found) {
+        // List not found - might still be creating
+        if (listRetryCount < maxRetries) {
+          isFetchingRef.current = false
           setTimeout(() => {
-            setCelebratingTasks(prevCelebrating => {
-              const newMap = new Map(prevCelebrating)
-              newMap.delete(taskId)
-              return newMap
-            })
-          }, 1800)
+            setListRetryCount(prev => prev + 1)
+          }, 500)
+          return // Don't set isLoading to false yet
+        } else {
+          setError('List not found')
+          setIsLoading(false)
+          isFetchingRef.current = false
+          return
         }
       }
       
-      return prev.map(t => 
-        t.id === taskId 
-          ? { ...t, metadata: { ...t.metadata, completed: !t.metadata.completed } }
-          : t
-      )
-    })
-  }, [])
+      // Update list state if we found it
+      if (foundList) {
+        setList(foundList)
+        setListRetryCount(0)
+        
+        // Changed: Only fetch tasks if we haven't already fetched for this list
+        if (lastListIdRef.current !== foundList.id) {
+          lastListIdRef.current = foundList.id
+          await fetchTasksForList(foundList.id)
+          hasFetchedTasksRef.current = true
+        }
+      } else if (!listSlug) {
+        // No specific list needed, fetch all tasks
+        if (!hasFetchedTasksRef.current) {
+          await fetchTasksForList(null)
+          hasFetchedTasksRef.current = true
+        }
+      }
+      
+      setIsLoading(false)
+      isFetchingRef.current = false
+    }
+    
+    loadData()
+  }, [listSlug, listRetryCount, fetchLists, fetchTasksForList])
 
-  const handleOptimisticDelete = useCallback((taskId: string) => {
-    // Changed: Also remove from celebrating if deleting
-    setCelebratingTasks(prev => {
-      const newMap = new Map(prev)
-      newMap.delete(taskId)
-      return newMap
-    })
-    setTasks(prev => prev.filter(t => t.id !== taskId))
-  }, [])
+  // Changed: Reset refs when listSlug changes (navigating to different list)
+  useEffect(() => {
+    hasFetchedTasksRef.current = false
+    lastListIdRef.current = null
+    setList(null)
+    setListRetryCount(0)
+  }, [listSlug])
 
-  const handleOptimisticUpdate = useCallback((taskId: string, updates: Partial<Task['metadata']>) => {
-    setTasks(prev => prev.map(t => 
-      t.id === taskId 
-        ? { ...t, metadata: { ...t.metadata, ...updates } }
-        : t
-    ))
-  }, [])
-
-  const handleOptimisticAdd = useCallback((task: Task) => {
-    setTasks(prev => [task, ...prev])
-  }, [])
-
-  // Changed: Include celebrating tasks in incomplete list so they stay visible during animation
-  const incompleteTasks = tasks.filter(t => !t.metadata.completed || celebratingTasks.has(t.id))
-  // Changed: Exclude celebrating tasks from completed list temporarily
-  const completedTasks = tasks.filter(t => t.metadata.completed && !celebratingTasks.has(t.id))
-
-  if (isLoading) {
+  // Changed: Show loading while list is being found (for newly created lists)
+  if (isLoading || (listSlug && !list && listRetryCount > 0 && listRetryCount < maxRetries)) {
     return (
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="text-center text-gray-500 dark:text-gray-400">
-          Loading tasks...
-        </div>
+      <div className="space-y-3">
+        <SkeletonLoader variant="task" count={3} />
       </div>
     )
   }
 
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-500">{error}</p>
+      </div>
+    )
+  }
+
+  // Changed: Use TaskList with correct props interface
   return (
-    // Changed: Use flex column with relative positioning for fixed add form
-    <div className="flex flex-col h-full">
-      {/* Changed: Scrollable task area with overflow-visible for confetti */}
-      <div className="flex-1 pb-24 space-y-6" style={{ overflow: 'visible' }}>
-        <div className="space-y-4" style={{ overflow: 'visible' }}>
-          {incompleteTasks.map(task => (
-            <TaskCard
-              key={task.id}
-              task={task}
-              lists={lists}
-              onOptimisticToggle={handleOptimisticToggle}
-              onOptimisticDelete={handleOptimisticDelete}
-              onOptimisticUpdate={handleOptimisticUpdate}
-            />
-          ))}
-        </div>
-
-        {/* Changed: Collapsible completed section */}
-        {completedTasks.length > 0 && (
-          <div className="pt-6 border-t border-gray-200 dark:border-gray-800">
-            <button
-              onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors py-2 w-full"
-            >
-              <ChevronRight className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
-              <span className="text-sm font-medium">
-                Completed ({completedTasks.length})
-              </span>
-            </button>
-            
-            {showCompleted && (
-              <div className="space-y-4 mt-2">
-                {completedTasks.map(task => (
-                  <TaskCard
-                    key={task.id}
-                    task={task}
-                    lists={lists}
-                    onOptimisticToggle={handleOptimisticToggle}
-                    onOptimisticDelete={handleOptimisticDelete}
-                    onOptimisticUpdate={handleOptimisticUpdate}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Changed: Fixed add task form at bottom - increased z-index to be above task checkmarks */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 p-4 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 z-20">
-        <div className="max-w-2xl mx-auto">
-          <AddTaskForm
-            lists={lists}
-            listSlug={listSlug}
-            onOptimisticAdd={handleOptimisticAdd}
-          />
-        </div>
-      </div>
+    <div>
+      <TaskList 
+        initialTasks={tasks}
+        lists={lists}
+        listSlug={listSlug}
+      />
     </div>
   )
 }

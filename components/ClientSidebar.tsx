@@ -13,6 +13,8 @@ interface ClientSidebarProps {
 export default function ClientSidebar({ currentListSlug, onListChange }: ClientSidebarProps) {
   const [lists, setLists] = useState<List[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  // Changed: Track lists that are still syncing (have temporary IDs)
+  const [syncingListSlugs, setSyncingListSlugs] = useState<Set<string>>(new Set())
   const router = useRouter()
   const pathname = usePathname()
   // Track deleted list IDs to prevent them from reappearing on fetch
@@ -57,15 +59,29 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
   const handleListCreated = (newList: List) => {
     // Optimistically add the new list
     setLists(prevLists => [...prevLists, newList])
+    // Changed: Mark this list slug as syncing if it has a temp ID
+    if (newList.id.startsWith('temp-')) {
+      setSyncingListSlugs(prev => new Set(prev).add(newList.slug))
+    }
   }
 
   // Changed: Add handler to replace optimistic list with real one
   const handleListReplaced = (tempId: string, realList: List) => {
-    setLists(prevLists => 
-      prevLists.map(list => 
+    setLists(prevLists => {
+      // Find the temp list to get its slug
+      const tempList = prevLists.find(list => list.id === tempId)
+      if (tempList) {
+        // Remove the old slug from syncing set
+        setSyncingListSlugs(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(tempList.slug)
+          return newSet
+        })
+      }
+      return prevLists.map(list => 
         list.id === tempId ? realList : list
       )
-    )
+    })
   }
 
   const handleListUpdated = (listId: string, updates: Partial<List['metadata']>) => {
@@ -92,6 +108,15 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
     
     // Optimistically remove the list
     setLists(prevLists => prevLists.filter(list => list.id !== listId))
+    
+    // Changed: Also remove from syncing set if present
+    if (deletedList) {
+      setSyncingListSlugs(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(deletedList.slug)
+        return newSet
+      })
+    }
     
     // If we're currently viewing the deleted list, redirect to home
     if (deletedList && deletedList.slug === currentListSlug) {
@@ -122,6 +147,7 @@ export default function ClientSidebar({ currentListSlug, onListChange }: ClientS
       lists={lists} 
       currentListSlug={currentListSlug} 
       isLoading={isLoading}
+      syncingListSlugs={syncingListSlugs}
       onListCreated={handleListCreated}
       onListReplaced={handleListReplaced}
       onListUpdated={handleListUpdated}

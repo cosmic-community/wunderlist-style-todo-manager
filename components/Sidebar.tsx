@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { List } from '@/types'
-import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
+import { CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
@@ -16,6 +16,8 @@ interface SidebarProps {
   lists: List[]
   currentListSlug?: string
   isLoading?: boolean
+  // Changed: Add syncingListSlugs to track lists that are still being created
+  syncingListSlugs?: Set<string>
   onListCreated?: (list: List) => void
   onListReplaced?: (tempId: string, realList: List) => void
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
@@ -23,7 +25,7 @@ interface SidebarProps {
   onListClick?: (slug?: string) => void
 }
 
-export default function Sidebar({ lists, currentListSlug, isLoading = false, onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
+export default function Sidebar({ lists, currentListSlug, isLoading = false, syncingListSlugs = new Set(), onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
   const [editingList, setEditingList] = useState<List | null>(null)
   const [invitingList, setInvitingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -103,8 +105,15 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
     })
   }
 
+  // Changed: Handle list navigation - prevent navigation if list is still syncing
   const handleListNavigation = (e: React.MouseEvent, slug?: string) => {
     e.preventDefault()
+    
+    // Changed: Don't navigate if list is still syncing
+    if (slug && syncingListSlugs.has(slug)) {
+      return // List is still being created, don't navigate
+    }
+    
     if (onListClick) {
       onListClick(slug)
     }
@@ -184,66 +193,84 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, onL
                   </h3>
                 </div>
                 
-                {lists.map((list) => (
-                  <div key={list.id} className="relative group">
-                    <button
-                      onClick={(e) => handleListNavigation(e, list.slug)}
-                      className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                        currentListSlug === list.slug
-                          ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                      }`}
-                    >
-                      <div 
-                        className="w-4 h-4 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
-                      />
-                      <span className="font-medium flex-1 truncate text-left">{list.title}</span>
-                      
-                      {/* More options button */}
+                {lists.map((list) => {
+                  // Changed: Check if this list is still syncing
+                  const isSyncing = syncingListSlugs.has(list.slug)
+                  
+                  return (
+                    <div key={list.id} className="relative group">
                       <button
-                        onClick={(e) => toggleMenu(e, list.id)}
-                        className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
-                        aria-label="List options"
+                        onClick={(e) => handleListNavigation(e, list.slug)}
+                        disabled={isSyncing}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                          isSyncing
+                            ? 'opacity-60 cursor-not-allowed'
+                            : currentListSlug === list.slug
+                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}
                       >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </button>
-                    </button>
-                    
-                    {/* Dropdown menu */}
-                    {openMenuId === list.id && (
-                      <div 
-                        ref={menuRef}
-                        className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
-                      >
-                        {/* Changed: Only show invite if authenticated */}
-                        {isAuthenticated && (
+                        {/* Changed: Show spinner if syncing, otherwise show color dot */}
+                        {isSyncing ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-gray-400 flex-shrink-0" />
+                        ) : (
+                          <div 
+                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
+                          />
+                        )}
+                        <span className="font-medium flex-1 truncate text-left">
+                          {list.title}
+                          {isSyncing && <span className="text-xs text-gray-400 ml-1">(Creating...)</span>}
+                        </span>
+                        
+                        {/* More options button - hide if syncing */}
+                        {!isSyncing && (
                           <button
-                            onClick={(e) => handleInviteClick(e, list)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            onClick={(e) => toggleMenu(e, list.id)}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
+                            aria-label="List options"
                           >
-                            <UserPlus className="w-4 h-4" />
-                            Invite
+                            <MoreHorizontal className="w-4 h-4" />
                           </button>
                         )}
-                        <button
-                          onClick={(e) => handleEditClick(e, list)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      </button>
+                      
+                      {/* Dropdown menu - don't show for syncing lists */}
+                      {openMenuId === list.id && !isSyncing && (
+                        <div 
+                          ref={menuRef}
+                          className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
                         >
-                          <Pencil className="w-4 h-4" />
-                          Edit
-                        </button>
-                        <button
-                          onClick={(e) => handleDeleteClick(e, list.id)}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ))}
+                          {/* Changed: Only show invite if authenticated */}
+                          {isAuthenticated && (
+                            <button
+                              onClick={(e) => handleInviteClick(e, list)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <UserPlus className="w-4 h-4" />
+                              Invite
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => handleEditClick(e, list)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Pencil className="w-4 h-4" />
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => handleDeleteClick(e, list.id)}
+                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
               </>
             )}
 
