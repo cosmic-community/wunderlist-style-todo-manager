@@ -40,6 +40,7 @@ export interface List extends CosmicObject {
 }
 
 // Task object type
+// Changed: Added owner field to allow tasks to be associated directly with a user
 export interface Task extends CosmicObject {
   type: 'tasks';
   metadata: {
@@ -53,6 +54,7 @@ export interface Task extends CosmicObject {
     };
     due_date?: string;
     list?: List | string;
+    owner?: User | string; // Changed: Added owner field
   };
 }
 

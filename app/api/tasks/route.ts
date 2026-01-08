@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const session = await getSession()
     
     if (session) {
-      // Return only user's tasks
+      // Changed: Return user's tasks (owned by user OR in user's lists)
       const tasks = await getTasksForUser(session.user.id)
       
       // Changed: Filter by list if specified
@@ -128,19 +128,8 @@ export async function POST(request: Request) {
     const data = await request.json()
     const session = await getSession()
     
-    // Changed: Allow task creation without auth (demo mode)
-    // Validate that the list belongs to the user only if authenticated
-    if (session && data.list) {
-      const userLists = await getTasksForUser(session.user.id)
-      const listIds = userLists.map(l => typeof l.metadata.list === 'string' ? l.metadata.list : l.metadata.list?.id).filter(Boolean)
-      
-      if (!listIds.includes(data.list)) {
-        return NextResponse.json(
-          { error: 'List not found or not accessible' },
-          { status: 403 }
-        )
-      }
-    }
+    // Changed: Set owner to current user if authenticated
+    const ownerId = session?.user?.id || ''
     
     const response = await cosmic.objects.insertOne({
       type: 'tasks',
@@ -151,7 +140,8 @@ export async function POST(request: Request) {
         completed: false,
         priority: data.priority ? { key: data.priority, value: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) } : { key: 'medium', value: 'Medium' },
         due_date: data.due_date || '',
-        list: data.list || ''
+        list: data.list || '',
+        owner: ownerId // Changed: Always set owner to current user
       }
     })
     

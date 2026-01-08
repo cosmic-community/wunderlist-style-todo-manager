@@ -32,18 +32,10 @@ export async function getTasks(): Promise<Task[]> {
   }
 }
 
-// Fetch tasks for a specific user (owned or shared lists)
+// Changed: Updated getTasksForUser to find tasks by owner OR by list membership
 export async function getTasksForUser(userId: string): Promise<Task[]> {
   try {
-    // First get user's lists
-    const lists = await getListsForUser(userId)
-    const listIds = lists.map(list => list.id)
-    
-    if (listIds.length === 0) {
-      return []
-    }
-    
-    // Get tasks that belong to those lists
+    // Get all tasks with depth to resolve relationships
     const response = await cosmic.objects
       .find({ type: 'tasks' })
       .props(['id', 'title', 'slug', 'metadata'])
@@ -51,12 +43,33 @@ export async function getTasksForUser(userId: string): Promise<Task[]> {
     
     const allTasks = response.objects as Task[]
     
-    // Filter tasks by user's lists
+    // Get user's lists for list-based filtering
+    const lists = await getListsForUser(userId)
+    const listIds = lists.map(list => list.id)
+    
+    // Changed: Filter tasks where:
+    // 1. Task owner matches userId, OR
+    // 2. Task belongs to a list the user owns/has access to
     return allTasks.filter(task => {
+      // Check if task is owned by this user
+      const ownerId = typeof task.metadata.owner === 'string' 
+        ? task.metadata.owner 
+        : task.metadata.owner?.id
+      
+      if (ownerId === userId) {
+        return true
+      }
+      
+      // Check if task belongs to a list the user has access to
       const listId = typeof task.metadata.list === 'string' 
         ? task.metadata.list 
         : task.metadata.list?.id
-      return listId && listIds.includes(listId)
+      
+      if (listId && listIds.includes(listId)) {
+        return true
+      }
+      
+      return false
     })
   } catch (error) {
     if (hasStatus(error) && error.status === 404) {
