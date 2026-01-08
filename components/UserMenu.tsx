@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { LogOut, User, ChevronDown, Settings } from 'lucide-react'
+import { LogOut, ChevronDown, Settings } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
@@ -28,27 +28,33 @@ export default function UserMenu() {
     router.push('/login')
   }
 
+  // Changed: Navigate to all tasks when clicking the user button
+  const handleUserClick = () => {
+    setIsOpen(!isOpen)
+  }
+
   if (!user) return null
 
   return (
     <div className="relative" ref={menuRef}>
       <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        onClick={handleUserClick}
+        className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors w-full"
       >
-        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+        <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
           <span className="text-white font-medium text-sm">
             {user.display_name.charAt(0).toUpperCase()}
           </span>
         </div>
-        <span className="hidden sm:block font-medium max-w-[120px] truncate">
+        {/* Changed: Show full name on all screens with truncation */}
+        <span className="font-medium truncate flex-1 text-left max-w-[140px]">
           {user.display_name}
         </span>
-        <ChevronDown className="w-4 h-4" />
+        <ChevronDown className="w-4 h-4 flex-shrink-0" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+        <div className="absolute right-0 left-0 md:left-auto md:right-0 mt-2 w-full md:w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {user.display_name}
@@ -58,7 +64,9 @@ export default function UserMenu() {
             </p>
           </div>
           
-          {/* Changed: Added Settings link */}
+          {/* Changed: Removed All Tasks link from user dropdown menu */}
+          
+          {/* Changed: Settings link */}
           <Link
             href="/settings"
             onClick={() => setIsOpen(false)}

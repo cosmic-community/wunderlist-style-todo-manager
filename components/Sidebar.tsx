@@ -23,9 +23,10 @@ interface SidebarProps {
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
   onListDeleted?: (listId: string) => void
   onListClick?: (slug?: string) => void
+  onRefresh?: () => void // Changed: Added refresh callback
 }
 
-export default function Sidebar({ lists, currentListSlug, isLoading = false, syncingListSlugs = new Set(), onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick }: SidebarProps) {
+export default function Sidebar({ lists, currentListSlug, isLoading = false, syncingListSlugs = new Set(), onListCreated, onListReplaced, onListUpdated, onListDeleted, onListClick, onRefresh }: SidebarProps) {
   const [editingList, setEditingList] = useState<List | null>(null)
   const [invitingList, setInvitingList] = useState<List | null>(null)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -126,7 +127,8 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
               <CheckSquare className="w-6 h-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Todos</h2>
+              {/* Changed: Made title static "Cosmic Todo" */}
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
             </div>
             <ThemeToggle />
           </div>
@@ -292,6 +294,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
           onClose={() => setEditingList(null)}
           onOptimisticUpdate={handleOptimisticUpdate}
           onOptimisticDelete={handleOptimisticDelete}
+          onRefresh={onRefresh} // Changed: Pass refresh callback
         />
       )}
 

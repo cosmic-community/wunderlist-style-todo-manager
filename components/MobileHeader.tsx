@@ -20,9 +20,10 @@ interface MobileHeaderProps {
   onListCreated: (list: List) => void
   onListUpdated: (listId: string, updates: Partial<List['metadata']>) => void
   onListClick?: (slug?: string) => void
+  onRefresh?: () => void // Changed: Added refresh callback
 }
 
-export default function MobileHeader({ lists, currentList, isLoading = false, onListDeleted, onListCreated, onListUpdated, onListClick }: MobileHeaderProps) {
+export default function MobileHeader({ lists, currentList, isLoading = false, onListDeleted, onListCreated, onListUpdated, onListClick, onRefresh }: MobileHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [editingList, setEditingList] = useState<List | null>(null)
   const [invitingList, setInvitingList] = useState<List | null>(null)
@@ -108,8 +109,9 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <CheckSquare className="w-6 h-6 text-blue-600" />
+            {/* Changed: Made title static "Cosmic Todo" */}
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              {currentList ? currentList.title : 'All Tasks'}
+              Cosmic Todo
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -275,6 +277,7 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
           onClose={() => setEditingList(null)}
           onOptimisticUpdate={handleOptimisticUpdate}
           onOptimisticDelete={handleOptimisticDelete}
+          onRefresh={onRefresh} // Changed: Pass refresh callback
         />
       )}
 

@@ -9,6 +9,7 @@ interface EditListModalProps {
   onClose: () => void
   onOptimisticUpdate: (listId: string, updates: Partial<List['metadata']>) => void
   onOptimisticDelete: (listId: string) => void
+  onRefresh?: () => void // Changed: Added refresh callback
 }
 
 const PRESET_COLORS = [
@@ -22,7 +23,7 @@ const PRESET_COLORS = [
   '#84cc16', // Lime
 ]
 
-export default function EditListModal({ list, onClose, onOptimisticUpdate, onOptimisticDelete }: EditListModalProps) {
+export default function EditListModal({ list, onClose, onOptimisticUpdate, onOptimisticDelete, onRefresh }: EditListModalProps) {
   const [formData, setFormData] = useState({
     name: list.metadata.name,
     description: list.metadata.description || '',
@@ -76,6 +77,10 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
+      // Changed: Trigger refresh after successful update
+      if (onRefresh) {
+        onRefresh()
+      }
     } catch (error) {
       console.error('Error updating list:', error)
     } finally {

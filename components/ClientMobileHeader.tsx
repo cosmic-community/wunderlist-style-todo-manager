@@ -111,6 +111,11 @@ export default function ClientMobileHeader({ currentListSlug, onListChange }: Cl
     }
   }
 
+  // Changed: Add refresh handler
+  const handleRefresh = () => {
+    fetchLists()
+  }
+
   return (
     <MobileHeader 
       lists={lists} 
@@ -120,6 +125,7 @@ export default function ClientMobileHeader({ currentListSlug, onListChange }: Cl
       onListCreated={handleListCreated}
       onListUpdated={handleListUpdated}
       onListClick={handleListClick}
+      onRefresh={handleRefresh} // Changed: Pass refresh callback
     />
   )
 }
