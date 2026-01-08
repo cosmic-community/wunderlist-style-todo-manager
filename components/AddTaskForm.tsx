@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { List, Task } from '@/types'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface AddTaskFormProps {
   lists: List[]
@@ -10,6 +11,10 @@ interface AddTaskFormProps {
 }
 
 export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTaskFormProps) {
+  // Changed: Get checkbox position from user preferences
+  const { user } = useAuth()
+  const checkboxPosition = user?.checkbox_position || 'left'
+  
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -95,7 +100,13 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
   // Changed: Added relative z-index to ensure form appears above task checkmarks
   return (
     <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 border border-gray-200 dark:border-gray-800 relative z-20">
-      <div className="flex items-center gap-3">
+      <div 
+        className="flex items-center gap-3"
+        style={{
+          // Changed: Reverse flex direction when checkbox is on right
+          flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
+        }}
+      >
         <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" />
         <input
           ref={inputRef}

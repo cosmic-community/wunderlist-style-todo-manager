@@ -13,8 +13,14 @@ export interface CosmicObject {
 // Priority type for select-dropdown (exact values from content model)
 export type TaskPriority = 'low' | 'medium' | 'high';
 
+// Changed: Added checkbox position type
+export type CheckboxPosition = 'left' | 'right';
+
+// Changed: Added color theme type
+export type ColorTheme = 'light' | 'dark' | 'system';
+
 // User object type
-// Changed: Added password_reset_token and password_reset_expires fields for password reset functionality
+// Changed: Added checkbox_position and color_theme fields for user preferences
 export interface User extends CosmicObject {
   type: 'users';
   metadata: {
@@ -25,6 +31,14 @@ export interface User extends CosmicObject {
     verification_code?: string;
     password_reset_token?: string;
     password_reset_expires?: string;
+    checkbox_position?: {
+      key: CheckboxPosition;
+      value: string;
+    };
+    color_theme?: {
+      key: ColorTheme;
+      value: string;
+    };
   };
 }
 
@@ -102,11 +116,14 @@ export interface UpdateListData {
 }
 
 // Auth types
+// Changed: Added checkbox_position and color_theme to AuthUser
 export interface AuthUser {
   id: string;
   email: string;
   display_name: string;
   email_verified: boolean;
+  checkbox_position?: CheckboxPosition;
+  color_theme?: ColorTheme;
 }
 
 export interface AuthSession {
@@ -139,4 +156,10 @@ export interface ForgotPasswordData {
 export interface ResetPasswordData {
   token: string;
   password: string;
+}
+
+// Changed: Added UserPreferences type for preference updates
+export interface UserPreferences {
+  checkbox_position?: CheckboxPosition;
+  color_theme?: ColorTheme;
 }

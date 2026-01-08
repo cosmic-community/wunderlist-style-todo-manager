@@ -3,11 +3,14 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
-import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send } from 'lucide-react'
+import { useTheme } from '@/components/ThemeProvider'
+import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send, Palette, LayoutList } from 'lucide-react'
 import Link from 'next/link'
+import { CheckboxPosition, ColorTheme } from '@/types'
 
 export default function SettingsPage() {
-  const { user, isLoading: authLoading, isAuthenticated, refreshUser } = useAuth()
+  const { user, isLoading: authLoading, isAuthenticated, refreshUser, updateCheckboxPosition } = useAuth()
+  const { userThemePreference, setThemePreference } = useTheme()
   const router = useRouter()
   
   // Profile form state
@@ -21,10 +24,17 @@ export default function SettingsPage() {
   const [resetSuccess, setResetSuccess] = useState('')
   const [resetError, setResetError] = useState('')
 
+  // Changed: Preferences state
+  const [checkboxPosition, setCheckboxPosition] = useState<CheckboxPosition>('left')
+  const [preferencesLoading, setPreferencesLoading] = useState(false)
+  const [preferencesSuccess, setPreferencesSuccess] = useState('')
+  const [preferencesError, setPreferencesError] = useState('')
+
   // Initialize form with user data
   useEffect(() => {
     if (user) {
       setDisplayName(user.display_name)
+      setCheckboxPosition(user.checkbox_position || 'left')
     }
   }, [user])
 
@@ -94,6 +104,42 @@ export default function SettingsPage() {
     setResetLoading(false)
   }
 
+  // Changed: Handle checkbox position change
+  const handleCheckboxPositionChange = async (position: CheckboxPosition) => {
+    setPreferencesError('')
+    setPreferencesSuccess('')
+    setPreferencesLoading(true)
+    
+    // Optimistic update
+    setCheckboxPosition(position)
+
+    const result = await updateCheckboxPosition(position)
+
+    if (result.success) {
+      setPreferencesSuccess('Preferences updated!')
+      setTimeout(() => setPreferencesSuccess(''), 3000)
+    } else {
+      setPreferencesError(result.error || 'Failed to update preferences')
+      // Revert on error
+      setCheckboxPosition(user?.checkbox_position || 'left')
+    }
+
+    setPreferencesLoading(false)
+  }
+
+  // Changed: Handle color theme change
+  const handleColorThemeChange = async (theme: ColorTheme) => {
+    setPreferencesError('')
+    setPreferencesSuccess('')
+    setPreferencesLoading(true)
+
+    await setThemePreference(theme)
+    
+    setPreferencesSuccess('Theme updated!')
+    setTimeout(() => setPreferencesSuccess(''), 3000)
+    setPreferencesLoading(false)
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
@@ -124,9 +170,9 @@ export default function SettingsPage() {
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-2xl mx-auto px-4 py-8 space-y-6">
         {/* Profile Section */}
-        <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6 mb-6">
+        <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
               <User className="w-5 h-5 text-blue-600" />
@@ -199,6 +245,150 @@ export default function SettingsPage() {
               )}
             </button>
           </form>
+        </section>
+
+        {/* Changed: Preferences Section */}
+        <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+              <Palette className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Preferences</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400">Customize your experience</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Checkbox Position */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <span className="flex items-center gap-2">
+                  <LayoutList className="w-4 h-4" />
+                  Checkbox Position
+                </span>
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleCheckboxPositionChange('left')}
+                  disabled={preferencesLoading}
+                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
+                    checkboxPosition === 'left'
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${
+                    checkboxPosition === 'left' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {checkboxPosition === 'left' && (
+                      <svg className="w-full h-full text-white p-0.5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    checkboxPosition === 'left' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                  }`}>Left Side</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleCheckboxPositionChange('right')}
+                  disabled={preferencesLoading}
+                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 flex-row-reverse ${
+                    checkboxPosition === 'right'
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${
+                    checkboxPosition === 'right' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 dark:border-gray-600'
+                  }`}>
+                    {checkboxPosition === 'right' && (
+                      <svg className="w-full h-full text-white p-0.5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+                        <path d="M5 13l4 4L19 7"></path>
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-sm font-medium ${
+                    checkboxPosition === 'right' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                  }`}>Right Side</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Color Theme */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <span className="flex items-center gap-2">
+                  <Palette className="w-4 h-4" />
+                  Color Theme
+                </span>
+              </label>
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleColorThemeChange('light')}
+                  disabled={preferencesLoading}
+                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                    userThemePreference === 'light'
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-200 shadow-sm" />
+                  <span className={`text-xs font-medium ${
+                    userThemePreference === 'light' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                  }`}>Light</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleColorThemeChange('dark')}
+                  disabled={preferencesLoading}
+                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                    userThemePreference === 'dark'
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-gray-900 border-2 border-gray-700" />
+                  <span className={`text-xs font-medium ${
+                    userThemePreference === 'dark' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                  }`}>Dark</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleColorThemeChange('system')}
+                  disabled={preferencesLoading}
+                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                    userThemePreference === 'system'
+                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                  }`}
+                >
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white to-gray-900 border-2 border-gray-300" />
+                  <span className={`text-xs font-medium ${
+                    userThemePreference === 'system' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                  }`}>System</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Success/Error Messages */}
+            {preferencesSuccess && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{preferencesSuccess}</span>
+              </div>
+            )}
+            {preferencesError && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm">{preferencesError}</span>
+              </div>
+            )}
+          </div>
         </section>
 
         {/* Password Section - Changed: Replaced form with reset button */}

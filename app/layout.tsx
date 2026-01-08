@@ -4,6 +4,7 @@ import './globals.css'
 import CosmicBadge from '@/components/CosmicBadge'
 import ThemeProvider from '@/components/ThemeProvider'
 import { AuthProvider } from '@/contexts/AuthContext'
+import ThemeSyncWrapper from '@/components/ThemeSyncWrapper'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -62,8 +63,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
+        {/* Changed: ThemeProvider is now outside AuthProvider to avoid dependency issues */}
         <ThemeProvider>
           <AuthProvider>
+            {/* Changed: ThemeSyncWrapper handles syncing user theme preference */}
+            <ThemeSyncWrapper />
             {children}
             <CosmicBadge bucketSlug={bucketSlug} />
             <script src="/dashboard-console-capture.js"></script>
