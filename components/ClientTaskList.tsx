@@ -7,9 +7,10 @@ import SkeletonLoader from './SkeletonLoader'
 
 interface ClientTaskListProps {
   listSlug?: string
+  refreshKey?: number // Changed: Added refreshKey prop to trigger refresh from parent
 }
 
-export default function ClientTaskList({ listSlug }: ClientTaskListProps) {
+export default function ClientTaskList({ listSlug, refreshKey }: ClientTaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [lists, setLists] = useState<List[]>([])
   const [list, setList] = useState<List | null>(null)
@@ -133,6 +134,34 @@ export default function ClientTaskList({ listSlug }: ClientTaskListProps) {
     setList(null)
     setListRetryCount(0)
   }, [listSlug])
+
+  // Changed: Effect to refresh data when refreshKey changes (triggered by parent after list update)
+  useEffect(() => {
+    if (refreshKey !== undefined && refreshKey > 0) {
+      // Reset refs and trigger a fresh fetch
+      hasFetchedTasksRef.current = false
+      lastListIdRef.current = null
+      isFetchingRef.current = false
+      setListRetryCount(prev => prev) // Trigger re-fetch by updating state
+      
+      // Force a new fetch
+      const refreshData = async () => {
+        setIsLoading(true)
+        const { found, foundList } = await fetchLists()
+        
+        if (foundList) {
+          setList(foundList)
+          await fetchTasksForList(foundList.id)
+        } else if (!listSlug) {
+          await fetchTasksForList(null)
+        }
+        
+        setIsLoading(false)
+      }
+      
+      refreshData()
+    }
+  }, [refreshKey, fetchLists, fetchTasksForList, listSlug])
 
   // Changed: Show loading while list is being found (for newly created lists)
   if (isLoading || (listSlug && !list && listRetryCount > 0 && listRetryCount < maxRetries)) {

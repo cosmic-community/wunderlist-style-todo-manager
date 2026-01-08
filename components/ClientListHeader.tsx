@@ -6,9 +6,10 @@ import SkeletonLoader from './SkeletonLoader'
 
 interface ClientListHeaderProps {
   listSlug: string
+  refreshKey?: number // Changed: Added refreshKey prop to trigger refresh from parent
 }
 
-export default function ClientListHeader({ listSlug }: ClientListHeaderProps) {
+export default function ClientListHeader({ listSlug, refreshKey }: ClientListHeaderProps) {
   const [list, setList] = useState<List | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -53,7 +54,7 @@ export default function ClientListHeader({ listSlug }: ClientListHeaderProps) {
     }
 
     fetchList()
-  }, [listSlug, retryCount])
+  }, [listSlug, retryCount, refreshKey]) // Changed: Added refreshKey to dependencies
 
   // Changed: Show loading state while retrying
   if (isLoading || (retryCount > 0 && retryCount < maxRetries && !list)) {

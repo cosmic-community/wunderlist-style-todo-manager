@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { X, Mail, Loader2, CheckCircle, AlertCircle, UserPlus, MessageSquare } from 'lucide-react'
 
 interface InviteModalProps {
@@ -15,6 +15,26 @@ export default function InviteModal({ listId, listName, onClose }: InviteModalPr
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const modalRef = useRef<HTMLDivElement>(null)
+
+  // Changed: Add escape key handler for consistency with EditTaskModal and EditListModal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [onClose])
+
+  // Changed: Add click outside handler for consistency with EditTaskModal and EditListModal
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
+      onClose()
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -46,8 +66,14 @@ export default function InviteModal({ listId, listName, onClose }: InviteModalPr
   }
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full">
+    <div 
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      onClick={handleBackdropClick}
+    >
+      <div 
+        ref={modalRef}
+        className="bg-white dark:bg-gray-900 rounded-xl shadow-xl max-w-md w-full"
+      >
         <div className="p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
