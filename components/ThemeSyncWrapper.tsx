@@ -1,11 +1,15 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, ReactNode } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from './ThemeProvider'
 
-// Changed: Made children prop optional since this component is used for side effects only
-export default function ThemeSyncWrapper({ children }: { children?: React.ReactNode }) {
+// Changed: Made children prop required and properly typed
+interface ThemeSyncWrapperProps {
+  children: ReactNode
+}
+
+export default function ThemeSyncWrapper({ children }: ThemeSyncWrapperProps) {
   const { user, isLoading } = useAuth()
   const { syncWithUserPreference } = useTheme()
 
@@ -16,6 +20,6 @@ export default function ThemeSyncWrapper({ children }: { children?: React.ReactN
     }
   }, [user, isLoading, syncWithUserPreference])
 
-  // Changed: Return children if provided, otherwise return null
-  return children ? <>{children}</> : null
+  // Changed: Always render children
+  return <>{children}</>
 }
