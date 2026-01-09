@@ -37,11 +37,13 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
   const [styleTheme, setStyleThemeState] = useState<StyleTheme>('default')
   const [mounted, setMounted] = useState(false)
 
-  // Changed: Function to apply theme to document
+  // Changed: Function to apply theme to document - now also applies to html element
   const applyTheme = useCallback((newTheme: Theme) => {
     setTheme(newTheme)
     if (typeof document !== 'undefined') {
+      // Changed: Apply dark class to both html and body to prevent white background when scrolling
       document.documentElement.classList.toggle('dark', newTheme === 'dark')
+      document.body.classList.toggle('dark', newTheme === 'dark')
     }
   }, [])
 
