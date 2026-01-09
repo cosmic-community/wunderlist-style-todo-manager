@@ -154,7 +154,7 @@ export default function CreateListForm({ onListCreated, onListReplaced, onCreati
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="List name"
-            className="w-full px-3 py-2 text-base bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 text-base bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent"
             disabled={isSubmitting}
             autoComplete="off"
             autoCorrect="off"
@@ -169,7 +169,7 @@ export default function CreateListForm({ onListCreated, onListReplaced, onCreati
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description (optional)"
             rows={2}
-            className="w-full px-3 py-2 text-base bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-3 py-2 text-base bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent resize-none"
             disabled={isSubmitting}
           />
         </div>
@@ -185,7 +185,7 @@ export default function CreateListForm({ onListCreated, onListReplaced, onCreati
                 type="button"
                 onClick={() => setColor(presetColor)}
                 className={`w-6 h-6 rounded-full transition-transform ${
-                  color === presetColor ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-800 scale-110' : ''
+                  color === presetColor ? 'ring-2 ring-offset-2 ring-accent dark:ring-offset-gray-800 scale-110' : ''
                 }`}
                 style={{ backgroundColor: presetColor }}
               />
@@ -209,7 +209,7 @@ export default function CreateListForm({ onListCreated, onListReplaced, onCreati
           <button
             type="submit"
             disabled={!name.trim() || isSubmitting}
-            className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 px-3 py-2 text-sm bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             Create
           </button>

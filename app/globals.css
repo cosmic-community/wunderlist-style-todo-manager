@@ -121,6 +121,10 @@
     background-color: rgb(var(--color-accent-hover));
   }
   
+  .hover\:bg-accent-hover:hover {
+    background-color: rgb(var(--color-accent-hover));
+  }
+  
   .bg-accent-light {
     background-color: rgb(var(--color-accent-light));
   }
@@ -138,6 +142,10 @@
   }
   
   .ring-accent {
+    --tw-ring-color: rgb(var(--color-accent));
+  }
+  
+  .focus\:ring-accent:focus {
     --tw-ring-color: rgb(var(--color-accent));
   }
 }

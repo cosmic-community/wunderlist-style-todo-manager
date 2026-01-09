@@ -137,7 +137,8 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-2">
-              <CheckSquare className="w-6 h-6 text-blue-600" />
+              {/* Changed: Use accent color for logo */}
+              <CheckSquare className="w-6 h-6 text-accent" />
               {/* Changed: Made title static "Cosmic Todo" */}
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
             </div>
@@ -160,7 +161,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
               <div className="space-y-2">
                 <Link
                   href="/login"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
                 >
                   <LogIn className="w-4 h-4" />
                   Log In
@@ -181,7 +182,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
               onClick={(e) => handleListNavigation(e, undefined)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                 !currentListSlug
-                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                  ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
               }`}
             >
@@ -216,7 +217,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                         onClick={(e) => handleListNavigation(e, list.slug)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           currentListSlug === list.slug
-                            ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                            ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                       >

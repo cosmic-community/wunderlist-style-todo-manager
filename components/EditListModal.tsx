@@ -164,7 +164,7 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
                 type="text"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 required
                 autoComplete="off"
               />
@@ -177,7 +177,7 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent resize-none bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                 rows={3}
               />
             </div>
@@ -193,7 +193,7 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
                     type="button"
                     onClick={() => setFormData({ ...formData, color: presetColor })}
                     className={`w-8 h-8 rounded-full transition-transform ${
-                      formData.color === presetColor ? 'ring-2 ring-offset-2 ring-blue-500 dark:ring-offset-gray-900 scale-110' : ''
+                      formData.color === presetColor ? 'ring-2 ring-offset-2 ring-accent dark:ring-offset-gray-900 scale-110' : ''
                     }`}
                     style={{ backgroundColor: presetColor }}
                   />
@@ -205,7 +205,7 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
               <button
                 type="submit"
                 disabled={!formData.name.trim() || isSubmitting}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-accent text-white rounded-lg font-medium hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isSubmitting ? 'Saving...' : 'Save Changes'}
               </button>

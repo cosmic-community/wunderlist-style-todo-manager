@@ -5,6 +5,7 @@ import { Task, List } from '@/types'
 import { Trash2 } from 'lucide-react'
 import EditTaskModal from '@/components/EditTaskModal'
 import { useAuth } from '@/contexts/AuthContext'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface TaskCardProps {
   task: Task
@@ -47,6 +48,7 @@ export default function TaskCard({
 }: TaskCardProps) {
   // Changed: Get checkbox position from user preferences
   const { user } = useAuth()
+  const { styleTheme } = useTheme()
   const checkboxPosition = user?.checkbox_position || 'left'
   
   const [isUpdating, setIsUpdating] = useState(false)
@@ -160,8 +162,21 @@ export default function TaskCard({
     setShowEditModal(true)
   }
   
-  // Changed: More vibrant confetti colors
-  const confettiColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']
+  // Changed: Theme-aware confetti colors
+  const getConfettiColors = () => {
+    switch (styleTheme) {
+      case 'ocean':
+        return ['#06b6d4', '#0891b2', '#22d3ee', '#67e8f9', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4']
+      case 'forest':
+        return ['#22c55e', '#16a34a', '#4ade80', '#86efac', '#84cc16', '#a3e635', '#bef264', '#d9f99d']
+      case 'sunset':
+        return ['#f97316', '#ea580c', '#fb923c', '#fdba74', '#ef4444', '#f87171', '#fca5a5', '#fecaca']
+      default: // default blue
+        return ['#3b82f6', '#2563eb', '#60a5fa', '#93c5fd', '#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe']
+    }
+  }
+  
+  const confettiColors = getConfettiColors()
 
   // Changed: Checkbox component for reuse
   const CheckboxButton = (
@@ -187,12 +202,12 @@ export default function TaskCard({
         aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
         disabled={isUpdating}
       >
-        {/* Changed: Circle with proper flex centering - use showCheckmark for visual state */}
+        {/* Changed: Circle with proper flex centering - use accent color */}
         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
           showCheckmark
-            ? 'bg-blue-600 border-blue-600'
-            : 'border-gray-300 dark:border-gray-600 hover:border-blue-400 dark:hover:border-blue-500'
-        } ${showCelebration ? 'scale-110 ring-4 ring-blue-200/50 dark:ring-blue-900/50' : ''}`}>
+            ? 'bg-accent border-accent'
+            : 'border-gray-300 dark:border-gray-600 hover:border-accent/60 dark:hover:border-accent/60'
+        } ${showCelebration ? 'scale-110 ring-4 ring-accent/30 dark:ring-accent/30' : ''}`}>
           {showCheckmark && (
             <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
               <path d="M5 13l4 4L19 7"></path>

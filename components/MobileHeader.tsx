@@ -108,7 +108,8 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
       <header className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 z-40">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
-            <CheckSquare className="w-6 h-6 text-blue-600" />
+            {/* Changed: Use accent color for logo */}
+            <CheckSquare className="w-6 h-6 text-accent" />
             {/* Changed: Made title static "Cosmic Todo" */}
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               Cosmic Todo
@@ -152,7 +153,7 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
                     <Link
                       href="/login"
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                      className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
                     >
                       <LogIn className="w-4 h-4" />
                       Log In
@@ -174,7 +175,7 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
                   onClick={(e) => handleListNavigation(e, undefined)}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                     !currentList
-                      ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                      ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
@@ -205,7 +206,7 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
                           onClick={(e) => handleListNavigation(e, list.slug)}
                           className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                             currentList?.slug === list.slug
-                              ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'
+                              ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
                               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                           }`}
                         >

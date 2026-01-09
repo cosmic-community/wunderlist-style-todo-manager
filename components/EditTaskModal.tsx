@@ -110,13 +110,13 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
               <label htmlFor="title" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Title
               </label>
-              {/* Changed: Improved dark mode input styling */}
+              {/* Changed: Improved dark mode input styling with accent focus */}
               <input
                 id="title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
                 required
               />
             </div>
@@ -125,13 +125,13 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
               <label htmlFor="description" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Description
               </label>
-              {/* Changed: Improved dark mode textarea styling */}
+              {/* Changed: Improved dark mode textarea styling with accent focus */}
               <textarea
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent resize-none"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent resize-none"
               />
             </div>
 
@@ -139,12 +139,12 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
               <label htmlFor="priority" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Priority
               </label>
-              {/* Changed: Improved dark mode select styling */}
+              {/* Changed: Improved dark mode select styling with accent focus */}
               <select
                 id="priority"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as TaskPriority)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -156,13 +156,13 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
               <label htmlFor="dueDate" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Due Date
               </label>
-              {/* Changed: Improved dark mode date input styling */}
+              {/* Changed: Improved dark mode date input styling with accent focus */}
               <input
                 id="dueDate"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent [color-scheme:light] dark:[color-scheme:dark]"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
 
@@ -170,12 +170,12 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
               <label htmlFor="list" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 List
               </label>
-              {/* Changed: Improved dark mode select styling */}
+              {/* Changed: Improved dark mode select styling with accent focus */}
               <select
                 id="list"
                 value={listId}
                 onChange={(e) => setListId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
               >
                 <option value="">No List</option>
                 {lists.map(list => (
@@ -203,7 +203,7 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
             <button
               type="submit"
               form="edit-task-form"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={isLoading}
             >
               {isLoading ? 'Saving...' : 'Save Changes'}
