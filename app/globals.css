@@ -70,13 +70,13 @@
     overflow: visible !important;
   }
   
-  /* Changed: Custom duration utility for 500ms transitions (half speed) */
+  /* Changed: Custom duration utility for 500ms transitions */
   .duration-500 {
     transition-duration: 500ms;
   }
 }
 
-/* Changed: Slowed confetti animation to 0.6s (half speed from 0.3s) */
+/* Changed: Confetti animation - 600ms duration for the celebration */
 @keyframes confetti {
   0% {
     transform: translate(-50%, -50%) scale(1);
@@ -95,7 +95,7 @@
   }
 }
 
-/* Changed: Slowed confetti animation to 0.6s (half speed) */
+/* Changed: Confetti animation duration 600ms - task disappears immediately after */
 .animate-confetti {
   animation: confetti 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

@@ -13,6 +13,8 @@ interface TaskCardProps {
   onOptimisticDelete: (taskId: string) => void
   onOptimisticUpdate: (taskId: string, updates: Partial<Task['metadata']>) => void
   onSyncComplete?: (taskId: string) => void
+  // Changed: Added callback to notify parent when task should be removed after animation
+  onAnimationComplete?: (taskId: string) => void
 }
 
 // Changed: Simplified confetti particle without overflow issues
@@ -40,7 +42,8 @@ export default function TaskCard({
   onOptimisticToggle,
   onOptimisticDelete,
   onOptimisticUpdate,
-  onSyncComplete
+  onSyncComplete,
+  onAnimationComplete
 }: TaskCardProps) {
   // Changed: Get checkbox position from user preferences
   const { user } = useAuth()
@@ -49,9 +52,8 @@ export default function TaskCard({
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCelebration, setShowCelebration] = useState(false)
-  const [isCollapsing, setIsCollapsing] = useState(false)
-  // Changed: Track if fully collapsed for smooth removal
-  const [isFullyCollapsed, setIsFullyCollapsed] = useState(false)
+  // Changed: Track if task should be hidden (removed completely after animation)
+  const [shouldHide, setShouldHide] = useState(false)
   // Changed: Add state for edit modal
   const [showEditModal, setShowEditModal] = useState(false)
   // Changed: Track if we should show the checkmark (delayed state update)
@@ -67,40 +69,32 @@ export default function TaskCard({
       // Changed: Show checkmark immediately for visual feedback
       setShowCheckmark(true)
       setShowCelebration(true)
-      setIsFullyCollapsed(false)
+      setShouldHide(false)
       
-      // Changed: Half speed - Start collapse after confetti animation (1200ms instead of 600ms)
-      const collapseTimer = setTimeout(() => {
-        setIsCollapsing(true)
-      }, 1200)
-      
-      // Changed: Half speed - Mark as fully collapsed after animation (1200ms + 500ms = 1700ms)
-      const fullyCollapsedTimer = setTimeout(() => {
-        setIsFullyCollapsed(true)
-      }, 1700)
-      
-      // Changed: Half speed - Hide celebration after transition completes (1800ms instead of 900ms)
-      const hideTimer = setTimeout(() => {
+      // Changed: Wait for confetti animation to complete (600ms) then instantly remove
+      // The confetti animation is 0.6s, so we wait for it to finish
+      const removeTimer = setTimeout(() => {
         setShowCelebration(false)
-        setIsCollapsing(false)
-      }, 1800)
+        setShouldHide(true)
+        // Changed: Notify parent to remove this task from the celebrating list
+        if (onAnimationComplete) {
+          onAnimationComplete(task.id)
+        }
+      }, 600) // Match the confetti animation duration exactly
       
       return () => {
-        clearTimeout(collapseTimer)
-        clearTimeout(fullyCollapsedTimer)
-        clearTimeout(hideTimer)
+        clearTimeout(removeTimer)
       }
     } else if (prevCompletedRef.current && !task.metadata.completed) {
       // Changed: Task was uncompleted, reset states
       setShowCheckmark(false)
       setShowCelebration(false)
-      setIsCollapsing(false)
-      setIsFullyCollapsed(false)
+      setShouldHide(false)
     }
     
     // Changed: Update ref after checking
     prevCompletedRef.current = task.metadata.completed
-  }, [task.metadata.completed])
+  }, [task.metadata.completed, task.id, onAnimationComplete])
   
   // Changed: Sync showCheckmark with task state for non-animated updates
   useEffect(() => {
@@ -209,61 +203,49 @@ export default function TaskCard({
     </div>
   )
   
+  // Changed: If task should be hidden after animation, don't render anything
+  if (shouldHide) {
+    return null
+  }
+  
   return (
     <>
-      {/* Changed: Use visibility and height instead of conditional render to prevent layout jump */}
+      {/* Changed: Simple render without collapse animation - task just disappears after confetti */}
       <div 
         ref={cardRef}
-        className={`grid transition-all duration-500 ease-out ${
-          isCollapsing 
-            ? 'grid-rows-[0fr] opacity-0' 
-            : 'grid-rows-[1fr] opacity-100'
-        }`}
-        style={{
-          // Changed: Hide completely when fully collapsed but keep in DOM briefly
-          visibility: isFullyCollapsed ? 'hidden' : 'visible',
-          position: isFullyCollapsed ? 'absolute' : 'relative',
-          pointerEvents: isFullyCollapsed ? 'none' : 'auto',
-        }}
-        aria-hidden={isFullyCollapsed}
+        className="relative"
       >
         {/* Changed: Removed overflow-hidden to allow confetti to be visible outside the card */}
-        <div className="min-h-0">
-          <div className="relative">
-            <div 
-              className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 ${
-                isCollapsing ? 'scale-98 -translate-y-1' : ''
-              }`}
-              style={{
-                // Changed: Updated transition to 500ms for half speed
-                transition: 'all 500ms cubic-bezier(0.4, 0, 0.2, 1)',
-                // Changed: Reverse flex direction when checkbox is on right
-                flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
-              }}
-              onClick={handleCardClick}
-            >
-              {/* Changed: Checkbox with confetti positioned around it - allow overflow */}
-              {CheckboxButton}
-              
-              {/* Title - use showCheckmark for visual styling */}
-              <span className={`flex-1 text-base transition-all duration-300 ease-out ${
-                showCheckmark ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-white'
-              }`}>
-                {task.metadata.title}
-              </span>
-              
-              {/* Delete button - only show for completed tasks that aren't celebrating */}
-              {task.metadata.completed && !showCelebration && (
-                <button
-                  onClick={handleDelete}
-                  className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                  aria-label="Delete task"
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+        <div className="relative">
+          <div 
+            className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800"
+            style={{
+              // Changed: Reverse flex direction when checkbox is on right
+              flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
+            }}
+            onClick={handleCardClick}
+          >
+            {/* Changed: Checkbox with confetti positioned around it - allow overflow */}
+            {CheckboxButton}
+            
+            {/* Title - use showCheckmark for visual styling */}
+            <span className={`flex-1 text-base transition-all duration-300 ease-out ${
+              showCheckmark ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-white'
+            }`}>
+              {task.metadata.title}
+            </span>
+            
+            {/* Delete button - only show for completed tasks that aren't celebrating */}
+            {task.metadata.completed && !showCelebration && (
+              <button
+                onClick={handleDelete}
+                className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                aria-label="Delete task"
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>

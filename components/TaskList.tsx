@@ -29,9 +29,8 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   const pendingStateChangesRef = useRef<Map<string, PendingTaskState>>(new Map())
   // Changed: Track deleted task IDs to prevent them from reappearing on fetch
   const deletedTaskIdsRef = useRef<Set<string>>(new Set())
-  // Changed: Track tasks that are currently celebrating (showing confetti + fade out)
-  // Now stores timestamp when animation started for more precise timing
-  const [celebratingTasks, setCelebratingTasks] = useState<Map<string, number>>(new Map())
+  // Changed: Track tasks that are currently celebrating (showing confetti)
+  const [celebratingTasks, setCelebratingTasks] = useState<Set<string>>(new Set())
 
   // Changed: Get current list name for empty state
   const currentList = listSlug ? lists.find(l => l.slug === listSlug) : null
@@ -58,7 +57,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
     setTasks(prev => [task, ...prev])
   }, [])
 
-  // Changed: Half speed - Updated toggle handler to match TaskCard's 1800ms total animation
+  // Changed: Toggle handler - add to celebrating set when completing
   const handleOptimisticToggle = useCallback((taskId: string) => {
     setTasks(prev => {
       const task = prev.find(t => t.id === taskId)
@@ -67,23 +66,13 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
         const newCompletedState = !task.metadata.completed
         pendingStateChangesRef.current.set(taskId, { completed: newCompletedState })
         
-        // Changed: If task is becoming completed, add to celebrating map with timestamp
+        // Changed: If task is becoming completed, add to celebrating set
         if (newCompletedState) {
           setCelebratingTasks(prevCelebrating => {
-            const newMap = new Map(prevCelebrating)
-            newMap.set(taskId, Date.now())
-            return newMap
+            const newSet = new Set(prevCelebrating)
+            newSet.add(taskId)
+            return newSet
           })
-          
-          // Changed: Half speed - Increased from 900ms to 1800ms to match TaskCard's animation
-          // TaskCard shows: 1200ms confetti + 500ms collapse + 100ms buffer = 1800ms total
-          setTimeout(() => {
-            setCelebratingTasks(prevCelebrating => {
-              const newMap = new Map(prevCelebrating)
-              newMap.delete(taskId)
-              return newMap
-            })
-          }, 1800)
         }
       }
       
@@ -92,6 +81,15 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
           ? { ...task, metadata: { ...task.metadata, completed: !task.metadata.completed } }
           : task
       )
+    })
+  }, [])
+
+  // Changed: Handler for when animation completes - remove from celebrating set
+  const handleAnimationComplete = useCallback((taskId: string) => {
+    setCelebratingTasks(prev => {
+      const newSet = new Set(prev)
+      newSet.delete(taskId)
+      return newSet
     })
   }, [])
 
@@ -104,9 +102,9 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
     pendingStateChangesRef.current.delete(taskId)
     // Changed: Also remove from celebrating if deleting
     setCelebratingTasks(prev => {
-      const newMap = new Map(prev)
-      newMap.delete(taskId)
-      return newMap
+      const newSet = new Set(prev)
+      newSet.delete(taskId)
+      return newSet
     })
     setTasks(prev => prev.filter(task => task.id !== taskId))
     
@@ -155,6 +153,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
             onOptimisticDelete={handleOptimisticDelete}
             onOptimisticUpdate={handleOptimisticUpdate}
             onSyncComplete={clearPendingState}
+            onAnimationComplete={handleAnimationComplete}
           />
         ))}
         
@@ -180,6 +179,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
                     onOptimisticDelete={handleOptimisticDelete}
                     onOptimisticUpdate={handleOptimisticUpdate}
                     onSyncComplete={clearPendingState}
+                    onAnimationComplete={handleAnimationComplete}
                   />
                 ))}
               </div>
