@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
-import { AuthUser, CheckboxPosition, ColorTheme } from '@/types'
+import { AuthUser, CheckboxPosition, ColorTheme, StyleTheme } from '@/types'
 
 interface AuthContextType {
   user: AuthUser | null
@@ -15,6 +15,7 @@ interface AuthContextType {
   // Changed: Added preference update methods
   updateCheckboxPosition: (position: CheckboxPosition) => Promise<{ success: boolean; error?: string }>
   updateColorTheme: (theme: ColorTheme) => Promise<{ success: boolean; error?: string }>
+  updateStyleTheme: (theme: StyleTheme) => Promise<{ success: boolean; error?: string }>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -143,6 +144,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Changed: Added updateStyleTheme method
+  const updateStyleTheme = async (theme: StyleTheme) => {
+    try {
+      const response = await fetch('/api/auth/update-preferences', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ style_theme: theme })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        setUser(prev => prev ? { ...prev, style_theme: theme } : null)
+        return { success: true }
+      }
+      
+      return { success: false, error: data.error || 'Failed to update preference' }
+    } catch {
+      return { success: false, error: 'Network error' }
+    }
+  }
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -154,7 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       refreshUser,
       updateUser,
       updateCheckboxPosition,
-      updateColorTheme
+      updateColorTheme,
+      updateStyleTheme
     }}>
       {children}
     </AuthContext.Provider>

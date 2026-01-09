@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/components/ThemeProvider'
-import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send, Palette, LayoutList } from 'lucide-react'
+import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send, Palette, LayoutList, Sparkles } from 'lucide-react'
 import Link from 'next/link'
-import { CheckboxPosition, ColorTheme } from '@/types'
+import { CheckboxPosition, ColorTheme, StyleTheme } from '@/types'
 
 export default function SettingsPage() {
-  const { user, isLoading: authLoading, isAuthenticated, refreshUser, updateCheckboxPosition } = useAuth()
-  const { userThemePreference, setThemePreference } = useTheme()
+  const { user, isLoading: authLoading, isAuthenticated, refreshUser, updateCheckboxPosition, updateStyleTheme } = useAuth()
+  const { userThemePreference, setThemePreference, styleTheme, setStyleTheme } = useTheme()
   const router = useRouter()
   
   // Profile form state
@@ -140,10 +140,32 @@ export default function SettingsPage() {
     setPreferencesLoading(false)
   }
 
+  // Changed: Handle style theme change
+  const handleStyleThemeChange = async (theme: StyleTheme) => {
+    setPreferencesError('')
+    setPreferencesSuccess('')
+    setPreferencesLoading(true)
+
+    // Update local theme immediately
+    setStyleTheme(theme)
+    
+    // Persist to server
+    const result = await updateStyleTheme(theme)
+
+    if (result.success) {
+      setPreferencesSuccess('Style theme updated!')
+      setTimeout(() => setPreferencesSuccess(''), 3000)
+    } else {
+      setPreferencesError(result.error || 'Failed to update style theme')
+    }
+
+    setPreferencesLoading(false)
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-black">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
       </div>
     )
   }
@@ -151,6 +173,14 @@ export default function SettingsPage() {
   if (!user) {
     return null
   }
+
+  // Changed: Style theme options with preview colors
+  const styleThemes: { key: StyleTheme; label: string; color: string; darkColor: string }[] = [
+    { key: 'default', label: 'Default', color: 'bg-blue-500', darkColor: 'bg-blue-600' },
+    { key: 'ocean', label: 'Ocean', color: 'bg-cyan-500', darkColor: 'bg-cyan-600' },
+    { key: 'forest', label: 'Forest', color: 'bg-green-500', darkColor: 'bg-green-600' },
+    { key: 'sunset', label: 'Sunset', color: 'bg-orange-500', darkColor: 'bg-orange-600' },
+  ]
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
@@ -164,7 +194,7 @@ export default function SettingsPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
-            <CheckSquare className="w-6 h-6 text-blue-600" />
+            <CheckSquare className="w-6 h-6 text-accent" />
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">Settings</h1>
           </div>
         </div>
@@ -174,8 +204,8 @@ export default function SettingsPage() {
         {/* Profile Section */}
         <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-accent-light dark:bg-accent/20 rounded-full flex items-center justify-center">
+              <User className="w-5 h-5 text-accent" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Profile</h2>
@@ -211,7 +241,7 @@ export default function SettingsPage() {
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 dark:text-white"
+                className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg focus:ring-2 focus:ring-accent focus:border-transparent outline-none text-gray-900 dark:text-white"
                 required
               />
             </div>
@@ -233,7 +263,7 @@ export default function SettingsPage() {
             <button
               type="submit"
               disabled={profileLoading || displayName === user.display_name}
-              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full py-3 bg-accent hover:bg-accent-hover text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {profileLoading ? (
                 <>
@@ -275,12 +305,12 @@ export default function SettingsPage() {
                   disabled={preferencesLoading}
                   className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
                     checkboxPosition === 'left'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${
-                    checkboxPosition === 'left' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 dark:border-gray-600'
+                    checkboxPosition === 'left' ? 'border-accent bg-accent' : 'border-gray-300 dark:border-gray-600'
                   }`}>
                     {checkboxPosition === 'left' && (
                       <svg className="w-full h-full text-white p-0.5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
@@ -289,7 +319,7 @@ export default function SettingsPage() {
                     )}
                   </div>
                   <span className={`text-sm font-medium ${
-                    checkboxPosition === 'left' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                    checkboxPosition === 'left' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
                   }`}>Left Side</span>
                 </button>
                 <button
@@ -298,12 +328,12 @@ export default function SettingsPage() {
                   disabled={preferencesLoading}
                   className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 flex-row-reverse ${
                     checkboxPosition === 'right'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${
-                    checkboxPosition === 'right' ? 'border-blue-600 bg-blue-600' : 'border-gray-300 dark:border-gray-600'
+                    checkboxPosition === 'right' ? 'border-accent bg-accent' : 'border-gray-300 dark:border-gray-600'
                   }`}>
                     {checkboxPosition === 'right' && (
                       <svg className="w-full h-full text-white p-0.5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
@@ -312,7 +342,7 @@ export default function SettingsPage() {
                     )}
                   </div>
                   <span className={`text-sm font-medium ${
-                    checkboxPosition === 'right' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                    checkboxPosition === 'right' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
                   }`}>Right Side</span>
                 </button>
               </div>
@@ -333,13 +363,13 @@ export default function SettingsPage() {
                   disabled={preferencesLoading}
                   className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
                     userThemePreference === 'light'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-200 shadow-sm" />
                   <span className={`text-xs font-medium ${
-                    userThemePreference === 'light' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                    userThemePreference === 'light' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
                   }`}>Light</span>
                 </button>
                 <button
@@ -348,13 +378,13 @@ export default function SettingsPage() {
                   disabled={preferencesLoading}
                   className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
                     userThemePreference === 'dark'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gray-900 border-2 border-gray-700" />
                   <span className={`text-xs font-medium ${
-                    userThemePreference === 'dark' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                    userThemePreference === 'dark' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
                   }`}>Dark</span>
                 </button>
                 <button
@@ -363,15 +393,45 @@ export default function SettingsPage() {
                   disabled={preferencesLoading}
                   className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
                     userThemePreference === 'system'
-                      ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
+                      ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white to-gray-900 border-2 border-gray-300" />
                   <span className={`text-xs font-medium ${
-                    userThemePreference === 'system' ? 'text-blue-700 dark:text-blue-300' : 'text-gray-700 dark:text-gray-300'
+                    userThemePreference === 'system' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
                   }`}>System</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Changed: Style Theme */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                <span className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Style Theme
+                </span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {styleThemes.map((theme) => (
+                  <button
+                    key={theme.key}
+                    type="button"
+                    onClick={() => handleStyleThemeChange(theme.key)}
+                    disabled={preferencesLoading}
+                    className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                      styleTheme === theme.key
+                        ? 'border-accent bg-accent-light dark:bg-accent/20'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full ${theme.color} dark:${theme.darkColor} shadow-sm`} />
+                    <span className={`text-xs font-medium ${
+                      styleTheme === theme.key ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
+                    }`}>{theme.label}</span>
+                  </button>
+                ))}
               </div>
             </div>
 

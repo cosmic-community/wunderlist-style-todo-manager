@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession, updateSession } from '@/lib/auth'
 import { cosmicWrite } from '@/lib/cosmic'
-import { CheckboxPosition, ColorTheme } from '@/types'
+import { CheckboxPosition, ColorTheme, StyleTheme } from '@/types'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,9 +15,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { checkbox_position, color_theme } = body as {
+    const { checkbox_position, color_theme, style_theme } = body as {
       checkbox_position?: CheckboxPosition
       color_theme?: ColorTheme
+      style_theme?: StyleTheme
     }
 
     // Validate checkbox_position if provided
@@ -36,6 +37,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Changed: Validate style_theme if provided
+    if (style_theme && !['default', 'ocean', 'forest', 'sunset'].includes(style_theme)) {
+      return NextResponse.json(
+        { error: 'Invalid style theme. Must be "default", "ocean", "forest", or "sunset"' },
+        { status: 400 }
+      )
+    }
+
     // Build metadata update object with only changed fields
     const metadataUpdate: Record<string, string> = {}
     
@@ -46,6 +55,17 @@ export async function POST(request: NextRequest) {
     
     if (color_theme) {
       metadataUpdate.color_theme = color_theme === 'light' ? 'Light' : color_theme === 'dark' ? 'Dark' : 'System'
+    }
+
+    // Changed: Add style_theme mapping
+    if (style_theme) {
+      const styleThemeMap: Record<StyleTheme, string> = {
+        'default': 'Default',
+        'ocean': 'Ocean',
+        'forest': 'Forest',
+        'sunset': 'Sunset'
+      }
+      metadataUpdate.style_theme = styleThemeMap[style_theme]
     }
 
     if (Object.keys(metadataUpdate).length === 0) {
@@ -64,7 +84,8 @@ export async function POST(request: NextRequest) {
     const updatedUser = {
       ...session.user,
       ...(checkbox_position && { checkbox_position }),
-      ...(color_theme && { color_theme })
+      ...(color_theme && { color_theme }),
+      ...(style_theme && { style_theme })
     }
 
     await updateSession(updatedUser)
