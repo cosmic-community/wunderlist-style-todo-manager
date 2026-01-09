@@ -38,9 +38,10 @@ export const metadata: Metadata = {
     ],
     apple: [
       {
-        url: '/apple-touch-icon.png',
+        // Changed: Updated to use new custom Cosmic image with imgix optimization for 180x180 apple touch icon
+        url: 'https://imgix.cosmicjs.com/a8fabc00-ed01-11f0-94f4-096f86bda01e-ai-gemini-3-pro-image-preview-1767925136331.jpeg?w=180&h=180&fit=crop&auto=format,compress',
         sizes: '180x180',
-        type: 'image/png',
+        type: 'image/jpeg',
       },
     ],
   },

@@ -1,3 +1,4 @@
-<!-- This file will be created as a PNG image -->
-<!-- The system will need to generate this as an actual PNG file -->
-<!-- For now, I'm noting this file needs to be created -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <rect width="180" height="180" fill="#f0f0f0"/>
+  <text x="50%" y="50%" font-size="120" text-anchor="middle" dominant-baseline="central">🍎</text>
+</svg>
