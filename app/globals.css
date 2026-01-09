@@ -189,6 +189,11 @@
   .focus\:ring-accent:focus {
     --tw-ring-color: rgb(var(--color-accent));
   }
+
+  /* Changed: Added PWA slide-up animation for install prompt */
+  .animate-slide-up {
+    animation: slideUp 0.3s ease-out forwards;
+  }
 }
 
 /* Changed: Confetti animation - 600ms duration for the celebration */
@@ -202,10 +207,10 @@
   }
   100% {
     transform: translate(-50%, -50%) 
-                 translateX(calc(cos(var(--confetti-angle)) * 80px))
-                 translateY(calc(sin(var(--confetti-angle)) * 80px))
-                 rotate(720deg)
-                 scale(0.3);
+                     translateX(calc(cos(var(--confetti-angle)) * 80px))
+                     translateY(calc(sin(var(--confetti-angle)) * 80px))
+                     rotate(720deg)
+                     scale(0.3);
     opacity: 0;
   }
 }
@@ -213,4 +218,35 @@
 /* Changed: Confetti animation duration 600ms - task disappears immediately after */
 .animate-confetti {
   animation: confetti 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Changed: Added slide-up keyframes for PWA install prompt */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Changed: Safe area insets for iOS notch support */
+@supports (padding: max(0px)) {
+  .safe-area-inset-top {
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+  
+  .safe-area-inset-bottom {
+    padding-bottom: max(0px, env(safe-area-inset-bottom));
+  }
+  
+  .safe-area-inset-left {
+    padding-left: max(0px, env(safe-area-inset-left));
+  }
+  
+  .safe-area-inset-right {
+    padding-right: max(0px, env(safe-area-inset-right));
+  }
 }
