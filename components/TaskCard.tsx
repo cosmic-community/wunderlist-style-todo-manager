@@ -69,21 +69,21 @@ export default function TaskCard({
       setShowCelebration(true)
       setIsFullyCollapsed(false)
       
-      // Changed: Increased delay - Start collapse after confetti animation has time to display (1200ms)
+      // Changed: 2x faster - Start collapse after confetti animation (600ms)
       const collapseTimer = setTimeout(() => {
         setIsCollapsing(true)
-      }, 1200)
+      }, 600)
       
-      // Changed: Mark as fully collapsed after animation completes (1200ms celebration + 500ms collapse)
+      // Changed: 2x faster - Mark as fully collapsed after animation (600ms + 250ms = 850ms)
       const fullyCollapsedTimer = setTimeout(() => {
         setIsFullyCollapsed(true)
-      }, 1700)
+      }, 850)
       
-      // Changed: Hide celebration after transition completes
+      // Changed: 2x faster - Hide celebration after transition completes (900ms)
       const hideTimer = setTimeout(() => {
         setShowCelebration(false)
         setIsCollapsing(false)
-      }, 1800)
+      }, 900)
       
       return () => {
         clearTimeout(collapseTimer)
@@ -168,11 +168,6 @@ export default function TaskCard({
   
   // Changed: More vibrant confetti colors
   const confettiColors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']
-  
-  // Changed: Don't render at all once fully collapsed - this prevents the jump
-  if (isFullyCollapsed) {
-    return null
-  }
 
   // Changed: Checkbox component for reuse
   const CheckboxButton = (
@@ -181,10 +176,10 @@ export default function TaskCard({
       {showCelebration && (
         <div className="absolute inset-0 pointer-events-none z-[5]">
           {confettiColors.map((color, i) => (
-            <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
+            <ConfettiParticle key={`a-${i}`} delay={i * 12.5} color={color} index={i} total={confettiColors.length} />
           ))}
           {confettiColors.map((color, i) => (
-            <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
+            <ConfettiParticle key={`b-${i}`} delay={i * 12.5 + 30} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
           ))}
         </div>
       )}
@@ -216,14 +211,21 @@ export default function TaskCard({
   
   return (
     <>
-      {/* Changed: Smoother transition with grid-based height animation for collapse */}
+      {/* Changed: Use visibility and height instead of conditional render to prevent layout jump */}
       <div 
         ref={cardRef}
-        className={`grid transition-all duration-500 ease-out ${
+        className={`grid transition-all duration-250 ease-out ${
           isCollapsing 
             ? 'grid-rows-[0fr] opacity-0' 
             : 'grid-rows-[1fr] opacity-100'
         }`}
+        style={{
+          // Changed: Hide completely when fully collapsed but keep in DOM briefly
+          visibility: isFullyCollapsed ? 'hidden' : 'visible',
+          position: isFullyCollapsed ? 'absolute' : 'relative',
+          pointerEvents: isFullyCollapsed ? 'none' : 'auto',
+        }}
+        aria-hidden={isFullyCollapsed}
       >
         {/* Changed: Removed overflow-hidden to allow confetti to be visible outside the card */}
         <div className="min-h-0">
@@ -233,9 +235,8 @@ export default function TaskCard({
                 isCollapsing ? 'scale-98 -translate-y-1' : ''
               }`}
               style={{
-                // Changed: Add margin-bottom that transitions to 0 for smoother collapse
-                marginBottom: isCollapsing ? '-8px' : '0px',
-                transition: 'all 500ms cubic-bezier(0.4, 0, 0.2, 1)',
+                // Changed: Removed margin-bottom transition to prevent layout jump
+                transition: 'all 250ms cubic-bezier(0.4, 0, 0.2, 1)',
                 // Changed: Reverse flex direction when checkbox is on right
                 flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
               }}
