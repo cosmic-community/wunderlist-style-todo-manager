@@ -131,17 +131,28 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     }
   }
 
+  // Changed: Handle clicking on Cosmic Todo title to navigate to All Tasks
+  const handleTitleClick = () => {
+    if (onListClick) {
+      onListClick(undefined) // undefined means "All Tasks" view
+    }
+  }
+
   return (
     <>
       <aside className="hidden md:flex md:flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
+            {/* Changed: Made title clickable to navigate to All Tasks */}
+            <button
+              onClick={handleTitleClick}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
               {/* Changed: Use accent color for logo */}
               <CheckSquare className="w-6 h-6 text-accent" />
-              {/* Changed: Made title static "Cosmic Todo" */}
+              {/* Changed: Made title clickable */}
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
-            </div>
+            </button>
             <ThemeToggle />
           </div>
           
