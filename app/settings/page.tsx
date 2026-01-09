@@ -454,8 +454,8 @@ export default function SettingsPage() {
         {/* Password Section - Changed: Replaced form with reset button */}
         <section className="bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-gray-800 p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-              <Lock className="w-5 h-5 text-orange-600" />
+            <div className="w-10 h-10 bg-accent-light dark:bg-accent/20 rounded-full flex items-center justify-center">
+              <Lock className="w-5 h-5 text-accent" />
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Password</h2>
@@ -483,21 +483,22 @@ export default function SettingsPage() {
               </div>
             )}
 
+            {/* Changed: Updated button to use default accent color and smaller size */}
             <button
               type="button"
               onClick={handlePasswordReset}
               disabled={resetLoading}
-              className="w-full py-3 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="px-4 py-2 bg-accent hover:bg-accent-hover text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               {resetLoading ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                   Sending...
                 </>
               ) : (
                 <>
-                  <Send className="w-5 h-5" />
-                  Send Password Reset Email
+                  <Send className="w-4 h-4" />
+                  Send Reset Email
                 </>
               )}
             </button>
