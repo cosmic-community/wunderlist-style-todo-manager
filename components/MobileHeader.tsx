@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { List } from '@/types'
-import { Menu, X, CheckSquare, ListTodo, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
+import { Menu, X, CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
@@ -179,7 +179,8 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                   }`}
                 >
-                  <ListTodo className="w-5 h-5" />
+                  {/* Changed: Use Inbox icon instead of ListTodo */}
+                  <Inbox className="w-5 h-5" />
                   <span className="font-medium">All Tasks</span>
                 </button>
                 
