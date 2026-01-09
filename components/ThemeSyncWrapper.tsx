@@ -4,7 +4,8 @@ import { useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from './ThemeProvider'
 
-export default function ThemeSyncWrapper({ children }: { children: React.ReactNode }) {
+// Changed: Made children prop optional since this component is used for side effects only
+export default function ThemeSyncWrapper({ children }: { children?: React.ReactNode }) {
   const { user, isLoading } = useAuth()
   const { syncWithUserPreference } = useTheme()
 
@@ -15,5 +16,6 @@ export default function ThemeSyncWrapper({ children }: { children: React.ReactNo
     }
   }, [user, isLoading, syncWithUserPreference])
 
-  return <>{children}</>
+  // Changed: Return children if provided, otherwise return null
+  return children ? <>{children}</> : null
 }
