@@ -69,9 +69,14 @@
   .overflow-visible-important {
     overflow: visible !important;
   }
+  
+  /* Changed: 2x faster - Custom duration utility for 250ms transitions */
+  .duration-250 {
+    transition-duration: 250ms;
+  }
 }
 
-/* Changed: Radial confetti animation that explodes outward from the center circle */
+/* Changed: 2x faster - Confetti animation reduced from 0.6s to 0.3s */
 @keyframes confetti {
   0% {
     transform: translate(-50%, -50%) scale(1);
@@ -90,7 +95,7 @@
   }
 }
 
-/* Changed: Apply radial confetti animation with better easing */
+/* Changed: 2x faster - Apply confetti animation at 0.3s instead of 0.6s */
 .animate-confetti {
-  animation: confetti 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: confetti 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }

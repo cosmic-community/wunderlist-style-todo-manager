@@ -20,9 +20,9 @@ module.exports = {
       fontFamily: {
         sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
       },
-      // Changed: Updated animation with circular pattern
+      // Changed: 2x faster - Updated animation from 0.6s to 0.3s
       animation: {
-        confetti: 'confetti 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+        confetti: 'confetti 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards',
       },
       keyframes: {
         confetti: {
@@ -46,6 +46,10 @@ module.exports = {
       // Changed: Added max-height for smoother collapse
       maxHeight: {
         '20': '5rem',
+      },
+      // Changed: 2x faster - Added custom 250ms duration
+      transitionDuration: {
+        '250': '250ms',
       },
     },
   },
