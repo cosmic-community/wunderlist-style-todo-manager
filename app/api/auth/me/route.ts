@@ -23,9 +23,10 @@ export async function GET() {
       )
     }
 
-    // Changed: Extract checkbox_position and color_theme from metadata
+    // Changed: Extract checkbox_position, color_theme, and style_theme from metadata
     const checkboxPosition = user.metadata.checkbox_position
     const colorTheme = user.metadata.color_theme
+    const styleTheme = user.metadata.style_theme
     
     return NextResponse.json({
       user: {
@@ -35,7 +36,8 @@ export async function GET() {
         email_verified: user.metadata.email_verified,
         // Changed: Map select-dropdown values back to keys
         checkbox_position: checkboxPosition?.key || 'left',
-        color_theme: colorTheme?.key || 'system'
+        color_theme: colorTheme?.key || 'system',
+        style_theme: styleTheme?.key || 'default'
       }
     })
   } catch (error) {

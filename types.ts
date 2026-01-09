@@ -19,8 +19,11 @@ export type CheckboxPosition = 'left' | 'right';
 // Changed: Added color theme type
 export type ColorTheme = 'light' | 'dark' | 'system';
 
+// Changed: Added style theme type for visual themes
+export type StyleTheme = 'default' | 'ocean' | 'forest' | 'sunset';
+
 // User object type
-// Changed: Added checkbox_position and color_theme fields for user preferences
+// Changed: Added checkbox_position, color_theme, and style_theme fields for user preferences
 export interface User extends CosmicObject {
   type: 'users';
   metadata: {
@@ -37,6 +40,10 @@ export interface User extends CosmicObject {
     };
     color_theme?: {
       key: ColorTheme;
+      value: string;
+    };
+    style_theme?: {
+      key: StyleTheme;
       value: string;
     };
   };
@@ -116,7 +123,7 @@ export interface UpdateListData {
 }
 
 // Auth types
-// Changed: Added checkbox_position and color_theme to AuthUser
+// Changed: Added checkbox_position, color_theme, and style_theme to AuthUser
 export interface AuthUser {
   id: string;
   email: string;
@@ -124,6 +131,7 @@ export interface AuthUser {
   email_verified: boolean;
   checkbox_position?: CheckboxPosition;
   color_theme?: ColorTheme;
+  style_theme?: StyleTheme;
 }
 
 export interface AuthSession {
@@ -162,4 +170,5 @@ export interface ResetPasswordData {
 export interface UserPreferences {
   checkbox_position?: CheckboxPosition;
   color_theme?: ColorTheme;
+  style_theme?: StyleTheme;
 }

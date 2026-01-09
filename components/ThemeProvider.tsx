@@ -1,17 +1,19 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
-import { ColorTheme } from '@/types'
+import { ColorTheme, StyleTheme } from '@/types'
 
 type Theme = 'light' | 'dark'
 
 interface ThemeContextType {
   theme: Theme
   userThemePreference: ColorTheme
+  styleTheme: StyleTheme
   toggleTheme: () => void
   setThemePreference: (preference: ColorTheme) => void
+  setStyleTheme: (theme: StyleTheme) => void
   // Changed: Added method to sync with user preference from auth
-  syncWithUserPreference: (preference: ColorTheme | undefined) => void
+  syncWithUserPreference: (colorPreference: ColorTheme | undefined, stylePreference: StyleTheme | undefined) => void
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
@@ -29,6 +31,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
   // Theme state is now managed independently
   const [theme, setTheme] = useState<Theme>('dark')
   const [userThemePreference, setUserThemePreference] = useState<ColorTheme>('system')
+  const [styleTheme, setStyleThemeState] = useState<StyleTheme>('default')
   const [mounted, setMounted] = useState(false)
 
   // Changed: Function to apply theme to document
@@ -36,6 +39,17 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme(newTheme)
     if (typeof document !== 'undefined') {
       document.documentElement.classList.toggle('dark', newTheme === 'dark')
+    }
+  }, [])
+
+  // Changed: Function to apply style theme to document
+  const applyStyleTheme = useCallback((newStyleTheme: StyleTheme) => {
+    setStyleThemeState(newStyleTheme)
+    if (typeof document !== 'undefined') {
+      // Remove all style theme classes
+      document.documentElement.classList.remove('theme-default', 'theme-ocean', 'theme-forest', 'theme-sunset')
+      // Add the new style theme class
+      document.documentElement.classList.add(`theme-${newStyleTheme}`)
     }
   }, [])
 
@@ -54,7 +68,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true)
     
-    // Check localStorage for saved preference
+    // Check localStorage for saved color preference
     const savedTheme = localStorage.getItem('theme') as ColorTheme | null
     if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
       setUserThemePreference(savedTheme)
@@ -65,7 +79,15 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       applyTheme(prefersDark ? 'dark' : 'light')
     }
-  }, [applyTheme, resolveTheme])
+
+    // Check localStorage for saved style theme
+    const savedStyleTheme = localStorage.getItem('styleTheme') as StyleTheme | null
+    if (savedStyleTheme && ['default', 'ocean', 'forest', 'sunset'].includes(savedStyleTheme)) {
+      applyStyleTheme(savedStyleTheme)
+    } else {
+      applyStyleTheme('default')
+    }
+  }, [applyTheme, applyStyleTheme, resolveTheme])
 
   // Changed: Listen for system theme changes when preference is 'system'
   useEffect(() => {
@@ -95,21 +117,33 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     applyTheme(resolveTheme(preference))
   }
 
+  // Changed: Set style theme
+  const setStyleTheme = (theme: StyleTheme) => {
+    localStorage.setItem('styleTheme', theme)
+    applyStyleTheme(theme)
+  }
+
   // Changed: Method to sync theme with user preference from auth context
-  const syncWithUserPreference = useCallback((preference: ColorTheme | undefined) => {
-    if (preference && ['light', 'dark', 'system'].includes(preference)) {
-      setUserThemePreference(preference)
-      localStorage.setItem('theme', preference)
-      applyTheme(resolveTheme(preference))
+  const syncWithUserPreference = useCallback((colorPreference: ColorTheme | undefined, stylePreference: StyleTheme | undefined) => {
+    if (colorPreference && ['light', 'dark', 'system'].includes(colorPreference)) {
+      setUserThemePreference(colorPreference)
+      localStorage.setItem('theme', colorPreference)
+      applyTheme(resolveTheme(colorPreference))
     }
-  }, [applyTheme, resolveTheme])
+    if (stylePreference && ['default', 'ocean', 'forest', 'sunset'].includes(stylePreference)) {
+      localStorage.setItem('styleTheme', stylePreference)
+      applyStyleTheme(stylePreference)
+    }
+  }, [applyTheme, applyStyleTheme, resolveTheme])
 
   return (
     <ThemeContext.Provider value={{ 
       theme, 
       userThemePreference, 
+      styleTheme,
       toggleTheme, 
       setThemePreference,
+      setStyleTheme,
       syncWithUserPreference 
     }}>
       {children}

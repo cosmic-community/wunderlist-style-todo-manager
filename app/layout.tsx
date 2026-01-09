@@ -67,9 +67,10 @@ export default function RootLayout({
         {/* Changed: ThemeProvider is now outside AuthProvider to avoid dependency issues */}
         <ThemeProvider>
           <AuthProvider>
-            {/* Changed: ThemeSyncWrapper handles syncing user theme preference */}
-            <ThemeSyncWrapper />
-            {children}
+            {/* Changed: ThemeSyncWrapper wraps children to handle syncing user theme preference */}
+            <ThemeSyncWrapper>
+              {children}
+            </ThemeSyncWrapper>
             <CosmicBadge bucketSlug={bucketSlug} />
             <script src="/dashboard-console-capture.js"></script>
           </AuthProvider>
