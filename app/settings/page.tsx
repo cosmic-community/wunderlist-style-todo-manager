@@ -174,12 +174,16 @@ export default function SettingsPage() {
     return null
   }
 
-  // Changed: Style theme options with preview colors
+  // Changed: Style theme options with preview colors - added four new feminine themes
   const styleThemes: { key: StyleTheme; label: string; color: string; darkColor: string }[] = [
     { key: 'default', label: 'Default', color: 'bg-blue-500', darkColor: 'bg-blue-600' },
     { key: 'ocean', label: 'Ocean', color: 'bg-cyan-500', darkColor: 'bg-cyan-600' },
     { key: 'forest', label: 'Forest', color: 'bg-green-500', darkColor: 'bg-green-600' },
     { key: 'sunset', label: 'Sunset', color: 'bg-orange-500', darkColor: 'bg-orange-600' },
+    { key: 'rose', label: 'Rose', color: 'bg-pink-400', darkColor: 'bg-pink-500' },
+    { key: 'lavender', label: 'Lavender', color: 'bg-violet-400', darkColor: 'bg-violet-500' },
+    { key: 'peach', label: 'Peach', color: 'bg-orange-300', darkColor: 'bg-rose-400' },
+    { key: 'mint', label: 'Mint', color: 'bg-emerald-400', darkColor: 'bg-emerald-500' },
   ]
 
   return (
@@ -405,7 +409,7 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Changed: Style Theme */}
+            {/* Changed: Style Theme - updated grid to accommodate 8 themes */}
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                 <span className="flex items-center gap-2">
@@ -413,20 +417,20 @@ export default function SettingsPage() {
                   Style Theme
                 </span>
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-4 gap-3">
                 {styleThemes.map((theme) => (
                   <button
                     key={theme.key}
                     type="button"
                     onClick={() => handleStyleThemeChange(theme.key)}
                     disabled={preferencesLoading}
-                    className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
                       styleTheme === theme.key
                         ? 'border-accent bg-accent-light dark:bg-accent/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
                     }`}
                   >
-                    <div className={`w-8 h-8 rounded-full ${theme.color} dark:${theme.darkColor} shadow-sm`} />
+                    <div className={`w-6 h-6 rounded-full ${theme.color} dark:${theme.darkColor} shadow-sm`} />
                     <span className={`text-xs font-medium ${
                       styleTheme === theme.key ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
                     }`}>{theme.label}</span>

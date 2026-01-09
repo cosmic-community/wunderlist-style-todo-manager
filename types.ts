@@ -19,8 +19,8 @@ export type CheckboxPosition = 'left' | 'right';
 // Changed: Added color theme type
 export type ColorTheme = 'light' | 'dark' | 'system';
 
-// Changed: Added style theme type for visual themes
-export type StyleTheme = 'default' | 'ocean' | 'forest' | 'sunset';
+// Changed: Added four new feminine style themes: rose, lavender, peach, mint
+export type StyleTheme = 'default' | 'ocean' | 'forest' | 'sunset' | 'rose' | 'lavender' | 'peach' | 'mint';
 
 // User object type
 // Changed: Added checkbox_position, color_theme, and style_theme fields for user preferences

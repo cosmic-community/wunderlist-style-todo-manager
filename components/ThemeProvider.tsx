@@ -5,6 +5,9 @@ import { ColorTheme, StyleTheme } from '@/types'
 
 type Theme = 'light' | 'dark'
 
+// Changed: Added four new feminine themes to the valid style themes list
+const VALID_STYLE_THEMES: StyleTheme[] = ['default', 'ocean', 'forest', 'sunset', 'rose', 'lavender', 'peach', 'mint']
+
 interface ThemeContextType {
   theme: Theme
   userThemePreference: ColorTheme
@@ -42,12 +45,15 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Changed: Function to apply style theme to document
+  // Changed: Function to apply style theme to document - updated to include new themes
   const applyStyleTheme = useCallback((newStyleTheme: StyleTheme) => {
     setStyleThemeState(newStyleTheme)
     if (typeof document !== 'undefined') {
-      // Remove all style theme classes
-      document.documentElement.classList.remove('theme-default', 'theme-ocean', 'theme-forest', 'theme-sunset')
+      // Remove all style theme classes including new feminine themes
+      document.documentElement.classList.remove(
+        'theme-default', 'theme-ocean', 'theme-forest', 'theme-sunset',
+        'theme-rose', 'theme-lavender', 'theme-peach', 'theme-mint'
+      )
       // Add the new style theme class
       document.documentElement.classList.add(`theme-${newStyleTheme}`)
     }
@@ -64,7 +70,7 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     return preference as Theme
   }, [])
 
-  // Changed: Initialize theme on mount from localStorage only
+  // Changed: Initialize theme on mount from localStorage only - updated validation
   useEffect(() => {
     setMounted(true)
     
@@ -80,9 +86,9 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
       applyTheme(prefersDark ? 'dark' : 'light')
     }
 
-    // Check localStorage for saved style theme
+    // Check localStorage for saved style theme - updated to include new themes
     const savedStyleTheme = localStorage.getItem('styleTheme') as StyleTheme | null
-    if (savedStyleTheme && ['default', 'ocean', 'forest', 'sunset'].includes(savedStyleTheme)) {
+    if (savedStyleTheme && VALID_STYLE_THEMES.includes(savedStyleTheme)) {
       applyStyleTheme(savedStyleTheme)
     } else {
       applyStyleTheme('default')
@@ -123,14 +129,14 @@ export default function ThemeProvider({ children }: { children: ReactNode }) {
     applyStyleTheme(theme)
   }
 
-  // Changed: Method to sync theme with user preference from auth context
+  // Changed: Method to sync theme with user preference from auth context - updated validation
   const syncWithUserPreference = useCallback((colorPreference: ColorTheme | undefined, stylePreference: StyleTheme | undefined) => {
     if (colorPreference && ['light', 'dark', 'system'].includes(colorPreference)) {
       setUserThemePreference(colorPreference)
       localStorage.setItem('theme', colorPreference)
       applyTheme(resolveTheme(colorPreference))
     }
-    if (stylePreference && ['default', 'ocean', 'forest', 'sunset'].includes(stylePreference)) {
+    if (stylePreference && VALID_STYLE_THEMES.includes(stylePreference)) {
       localStorage.setItem('styleTheme', stylePreference)
       applyStyleTheme(stylePreference)
     }

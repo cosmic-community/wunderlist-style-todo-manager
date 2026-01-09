@@ -3,6 +3,9 @@ import { getSession, updateSession } from '@/lib/auth'
 import { cosmicWrite } from '@/lib/cosmic'
 import { CheckboxPosition, ColorTheme, StyleTheme } from '@/types'
 
+// Changed: Added four new feminine themes to valid style themes
+const VALID_STYLE_THEMES: StyleTheme[] = ['default', 'ocean', 'forest', 'sunset', 'rose', 'lavender', 'peach', 'mint']
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getSession()
@@ -37,10 +40,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Changed: Validate style_theme if provided
-    if (style_theme && !['default', 'ocean', 'forest', 'sunset'].includes(style_theme)) {
+    // Changed: Validate style_theme if provided - updated to include new feminine themes
+    if (style_theme && !VALID_STYLE_THEMES.includes(style_theme)) {
       return NextResponse.json(
-        { error: 'Invalid style theme. Must be "default", "ocean", "forest", or "sunset"' },
+        { error: 'Invalid style theme. Must be one of: default, ocean, forest, sunset, rose, lavender, peach, or mint' },
         { status: 400 }
       )
     }
@@ -57,13 +60,17 @@ export async function POST(request: NextRequest) {
       metadataUpdate.color_theme = color_theme === 'light' ? 'Light' : color_theme === 'dark' ? 'Dark' : 'System'
     }
 
-    // Changed: Add style_theme mapping
+    // Changed: Add style_theme mapping - updated to include new feminine themes
     if (style_theme) {
       const styleThemeMap: Record<StyleTheme, string> = {
         'default': 'Default',
         'ocean': 'Ocean',
         'forest': 'Forest',
-        'sunset': 'Sunset'
+        'sunset': 'Sunset',
+        'rose': 'Rose',
+        'lavender': 'Lavender',
+        'peach': 'Peach',
+        'mint': 'Mint'
       }
       metadataUpdate.style_theme = styleThemeMap[style_theme]
     }

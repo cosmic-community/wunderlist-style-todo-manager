@@ -52,6 +52,38 @@
     --color-accent-dark: 154 52 18; /* orange-800 */
   }
 
+  /* Changed: Added Rose theme - soft pink/rose feminine colors */
+  .theme-rose {
+    --color-accent: 244 114 182; /* pink-400 */
+    --color-accent-hover: 236 72 153; /* pink-500 */
+    --color-accent-light: 252 231 243; /* pink-100 */
+    --color-accent-dark: 157 23 77; /* pink-800 */
+  }
+
+  /* Changed: Added Lavender theme - purple/lavender feminine colors */
+  .theme-lavender {
+    --color-accent: 167 139 250; /* violet-400 */
+    --color-accent-hover: 139 92 246; /* violet-500 */
+    --color-accent-light: 237 233 254; /* violet-100 */
+    --color-accent-dark: 91 33 182; /* violet-800 */
+  }
+
+  /* Changed: Added Peach theme - warm peachy coral feminine colors */
+  .theme-peach {
+    --color-accent: 251 146 60; /* orange-400 mixed with pink undertones */
+    --color-accent-hover: 251 113 133; /* rose-400 */
+    --color-accent-light: 255 228 230; /* rose-100 */
+    --color-accent-dark: 190 18 60; /* rose-800 */
+  }
+
+  /* Changed: Added Mint theme - soft mint/seafoam feminine colors */
+  .theme-mint {
+    --color-accent: 52 211 153; /* emerald-400 */
+    --color-accent-hover: 16 185 129; /* emerald-500 */
+    --color-accent-light: 209 250 229; /* emerald-100 */
+    --color-accent-dark: 6 95 70; /* emerald-800 */
+  }
+
   /* Prevent iOS zoom on form inputs by ensuring minimum 16px font size */
   input,
   select,
