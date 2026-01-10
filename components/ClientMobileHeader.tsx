@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef, Dispatch, SetStateAction } from 'react'
 import { List } from '@/types'
 import MobileHeader from '@/components/MobileHeader'
+import { getCachedLists, setCachedLists, hasCachedLists } from '@/lib/listsCache'
 
 export interface ClientMobileHeaderProps {
   currentListSlug?: string
@@ -12,8 +13,10 @@ export interface ClientMobileHeaderProps {
 }
 
 export default function ClientMobileHeader({ currentListSlug, onListChange, onCreatingStateChange, onListRefresh }: ClientMobileHeaderProps) {
-  const [lists, setLists] = useState<List[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // Changed: Initialize lists from cache to prevent refetch on navigation
+  const [lists, setLists] = useState<List[]>(getCachedLists() || [])
+  // Changed: Only show loading if we don't have cached data
+  const [isLoading, setIsLoading] = useState(!hasCachedLists())
   // Changed: Track lists that are still syncing (have temporary IDs)
   const [syncingListSlugs, setSyncingListSlugs] = useState<Set<string>>(new Set())
   // Track deleted list IDs to prevent them from reappearing on fetch
@@ -21,7 +24,10 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
 
   const fetchLists = useCallback(async () => {
     try {
-      setIsLoading(true)
+      // Changed: Only show loading if we don't have cached data
+      if (!hasCachedLists()) {
+        setIsLoading(true)
+      }
       const response = await fetch('/api/lists')
       if (response.ok) {
         const data = await response.json()
@@ -40,7 +46,10 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
           const fetchedIds = new Set(filteredLists.map(list => list.id))
           const uniqueTempLists = tempLists.filter(list => !fetchedIds.has(list.id))
           
-          return [...filteredLists, ...uniqueTempLists]
+          const newLists = [...filteredLists, ...uniqueTempLists]
+          // Changed: Update the shared cache
+          setCachedLists(newLists)
+          return newLists
         })
       }
     } catch (error) {
@@ -50,14 +59,25 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
     }
   }, [])
 
-  // Changed: Fetch only on mount, no polling
+  // Changed: Only fetch on mount if we don't have cached data
+  // This prevents refetching when navigating between lists
   useEffect(() => {
-    fetchLists()
+    if (!hasCachedLists()) {
+      fetchLists()
+    } else {
+      // Already have cached data, just mark as loaded
+      setIsLoading(false)
+    }
   }, [fetchLists])
 
   const handleListCreated = (newList: List) => {
     // Optimistically add the new list
-    setLists(prevLists => [...prevLists, newList])
+    setLists(prevLists => {
+      const newLists = [...prevLists, newList]
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
+    })
     // Changed: Mark this list slug as syncing if it has a temp ID
     if (newList.id.startsWith('temp-')) {
       setSyncingListSlugs(prev => new Set(prev).add(newList.slug))
@@ -77,16 +97,19 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
           return newSet
         })
       }
-      return prevLists.map(list => 
+      const newLists = prevLists.map(list => 
         list.id === tempId ? realList : list
       )
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
     })
   }
 
   const handleListUpdated = (listId: string, updates: Partial<List['metadata']>) => {
     // Optimistically update the list
-    setLists(prevLists => 
-      prevLists.map(list => 
+    setLists(prevLists => {
+      const newLists = prevLists.map(list => 
         list.id === listId 
           ? { 
               ...list, 
@@ -95,7 +118,10 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
             } 
           : list
       )
-    )
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
+    })
     
     // Changed: Trigger parent refresh when list is updated
     if (onListRefresh) {
@@ -111,7 +137,12 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
     deletedListIds.current.add(listId)
     
     // Optimistically remove the list
-    setLists(prevLists => prevLists.filter(list => list.id !== listId))
+    setLists(prevLists => {
+      const newLists = prevLists.filter(list => list.id !== listId)
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
+    })
     
     // Changed: Also remove from syncing set if present
     if (deletedList) {

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, Dispatch, SetStateAction } fr
 import { useRouter } from 'next/navigation'
 import { List } from '@/types'
 import Sidebar from '@/components/Sidebar'
+import { getCachedLists, setCachedLists, hasCachedLists } from '@/lib/listsCache'
 
 export interface ClientSidebarProps {
   currentListSlug?: string
@@ -13,9 +14,10 @@ export interface ClientSidebarProps {
 }
 
 export default function ClientSidebar({ currentListSlug, onListChange, onCreatingStateChange, onListRefresh }: ClientSidebarProps) {
-  const [lists, setLists] = useState<List[]>([])
-  // Changed: Remove isLoading state - sidebar lists should load silently
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  // Changed: Initialize lists from cache to prevent refetch on navigation
+  const [lists, setLists] = useState<List[]>(getCachedLists() || [])
+  // Changed: Only show loading if we don't have cached data
+  const [isInitialLoad, setIsInitialLoad] = useState(!hasCachedLists())
   // Changed: Track lists that are still syncing (have temporary IDs)
   const [syncingListSlugs, setSyncingListSlugs] = useState<Set<string>>(new Set())
   const router = useRouter()
@@ -43,7 +45,10 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
           const fetchedIds = new Set(filteredLists.map(list => list.id))
           const uniqueTempLists = tempLists.filter(list => !fetchedIds.has(list.id))
           
-          return [...filteredLists, ...uniqueTempLists]
+          const newLists = [...filteredLists, ...uniqueTempLists]
+          // Changed: Update the shared cache
+          setCachedLists(newLists)
+          return newLists
         })
       }
     } catch (error) {
@@ -53,14 +58,25 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
     }
   }, [])
 
-  // Changed: Fetch only on mount, no polling
+  // Changed: Only fetch on mount if we don't have cached data
+  // This prevents refetching when navigating between lists
   useEffect(() => {
-    fetchLists()
+    if (!hasCachedLists()) {
+      fetchLists()
+    } else {
+      // Already have cached data, just mark as loaded
+      setIsInitialLoad(false)
+    }
   }, [fetchLists])
 
   const handleListCreated = (newList: List) => {
     // Optimistically add the new list
-    setLists(prevLists => [...prevLists, newList])
+    setLists(prevLists => {
+      const newLists = [...prevLists, newList]
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
+    })
     // Changed: Mark this list slug as syncing if it has a temp ID
     if (newList.id.startsWith('temp-')) {
       setSyncingListSlugs(prev => new Set(prev).add(newList.slug))
@@ -80,16 +96,19 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
           return newSet
         })
       }
-      return prevLists.map(list => 
+      const newLists = prevLists.map(list => 
         list.id === tempId ? realList : list
       )
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
     })
   }
 
   const handleListUpdated = (listId: string, updates: Partial<List['metadata']>) => {
     // Optimistically update the list
-    setLists(prevLists => 
-      prevLists.map(list => 
+    setLists(prevLists => {
+      const newLists = prevLists.map(list => 
         list.id === listId 
           ? { 
               ...list, 
@@ -98,7 +117,10 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
             } 
           : list
       )
-    )
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
+    })
     
     // Changed: Trigger parent refresh when list is updated
     if (onListRefresh) {
@@ -114,7 +136,12 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
     deletedListIds.current.add(listId)
     
     // Optimistically remove the list
-    setLists(prevLists => prevLists.filter(list => list.id !== listId))
+    setLists(prevLists => {
+      const newLists = prevLists.filter(list => list.id !== listId)
+      // Changed: Update the shared cache
+      setCachedLists(newLists)
+      return newLists
+    })
     
     // Changed: Also remove from syncing set if present
     if (deletedList) {
