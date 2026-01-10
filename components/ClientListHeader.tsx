@@ -97,14 +97,15 @@ export default function ClientListHeader({ listSlug, refreshKey }: ClientListHea
   if (isLoading || !list) {
     return (
       <div className="mb-6">
-        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse" />
+        <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 animate-pulse mb-2" />
+        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-64 animate-pulse" />
       </div>
     )
   }
 
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 mb-2">
         <div 
           className="w-4 h-4 rounded-full flex-shrink-0"
           style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
@@ -113,6 +114,11 @@ export default function ClientListHeader({ listSlug, refreshKey }: ClientListHea
           {list.metadata.name}
         </h1>
       </div>
+      {list.metadata.description && (
+        <p className="text-gray-600 dark:text-gray-400 ml-7">
+          {list.metadata.description}
+        </p>
+      )}
     </div>
   )
 }
