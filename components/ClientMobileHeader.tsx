@@ -15,6 +15,8 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onLi
   const [lists, setLists] = useState<List[]>([])
   const [currentList, setCurrentList] = useState<List | undefined>(undefined)
   const [isLoading, setIsLoading] = useState(true)
+  // Changed: Track lists that are still syncing (have temporary IDs)
+  const [syncingListSlugs, setSyncingListSlugs] = useState<Set<string>>(new Set())
   const router = useRouter()
   // Track deleted list IDs to prevent them from reappearing on fetch
   const deletedListIds = useRef<Set<string>>(new Set())
@@ -29,7 +31,19 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onLi
         const filteredLists = (data.lists as List[]).filter(
           list => !deletedListIds.current.has(list.id)
         )
-        setLists(filteredLists)
+        
+        // Changed: Only update lists if they don't have temporary IDs
+        // This prevents replacing optimistic updates with fetched data
+        setLists(prevLists => {
+          // Keep any lists with temporary IDs from optimistic updates
+          const tempLists = prevLists.filter(list => list.id.startsWith('temp-'))
+          
+          // Merge temporary lists with fetched lists, avoiding duplicates
+          const fetchedIds = new Set(filteredLists.map(list => list.id))
+          const uniqueTempLists = tempLists.filter(list => !fetchedIds.has(list.id))
+          
+          return [...filteredLists, ...uniqueTempLists]
+        })
         
         if (currentListSlug) {
           const found = filteredLists.find((l: List) => l.slug === currentListSlug)
@@ -53,6 +67,29 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onLi
   const handleListCreated = (newList: List) => {
     // Optimistically add the new list
     setLists(prevLists => [...prevLists, newList])
+    // Changed: Mark this list slug as syncing if it has a temp ID
+    if (newList.id.startsWith('temp-')) {
+      setSyncingListSlugs(prev => new Set(prev).add(newList.slug))
+    }
+  }
+
+  // Changed: Add handler to replace optimistic list with real one
+  const handleListReplaced = (tempId: string, realList: List) => {
+    setLists(prevLists => {
+      // Find the temp list to get its slug
+      const tempList = prevLists.find(list => list.id === tempId)
+      if (tempList) {
+        // Remove the old slug from syncing set
+        setSyncingListSlugs(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(tempList.slug)
+          return newSet
+        })
+      }
+      return prevLists.map(list => 
+        list.id === tempId ? realList : list
+      )
+    })
   }
 
   const handleListUpdated = (listId: string, updates: Partial<List['metadata']>) => {
@@ -94,6 +131,15 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onLi
     // Optimistically remove the list
     setLists(prevLists => prevLists.filter(list => list.id !== listId))
     
+    // Changed: Also remove from syncing set if present
+    if (deletedList) {
+      setSyncingListSlugs(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(deletedList.slug)
+        return newSet
+      })
+    }
+    
     // Clear current list if it was deleted
     if (deletedList && deletedList.slug === currentListSlug) {
       setCurrentList(undefined)
@@ -127,11 +173,13 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onLi
       lists={lists} 
       currentList={currentList}
       isLoading={isLoading}
+      syncingListSlugs={syncingListSlugs}
       onListDeleted={handleListDeleted}
       onListCreated={handleListCreated}
+      onListReplaced={handleListReplaced}
       onListUpdated={handleListUpdated}
       onListClick={handleListClick}
-      onRefresh={handleRefresh} // Changed: Pass refresh callback
+      onRefresh={handleRefresh}
     />
   )
 }

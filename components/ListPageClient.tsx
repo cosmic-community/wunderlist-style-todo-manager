@@ -28,6 +28,7 @@ export default function ListPageClient({ slug }: ListPageClientProps) {
   }, [])
 
   return (
+    // Changed: Use h-screen with flex layout and overflow-hidden to prevent excessive scrolling
     <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden">
       {/* Mobile Header */}
       <ClientMobileHeader currentListSlug={slug} onListRefresh={handleListRefresh} />
@@ -39,26 +40,28 @@ export default function ListPageClient({ slug }: ListPageClientProps) {
         onListRefresh={handleListRefresh}
       />
       
-      {/* Changed: Main Content - properly scrollable with fixed header space */}
-      <main className="flex-1 pt-16 md:pt-0 overflow-y-auto">
-        <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 pb-32">
-          {/* Changed: Show creating list loading state when a list is being created */}
-          {isCreatingList ? (
-            <SkeletonLoader variant="creating-list" />
-          ) : isUpdatingList ? (
-            // Changed: Show loading state while list is being updated
-            <>
-              <SkeletonLoader variant="header" />
-              <div className="space-y-3 mt-6">
-                <SkeletonLoader variant="task" count={3} />
-              </div>
-            </>
-          ) : (
-            <>
-              <ClientListHeader listSlug={slug} refreshKey={refreshKey} />
-              <ClientTaskList listSlug={slug} refreshKey={refreshKey} />
-            </>
-          )}
+      {/* Changed: Main Content - flex-1 with overflow-y-auto for internal scrolling only */}
+      <main className="flex-1 pt-16 md:pt-0 flex flex-col min-h-0">
+        <div className="flex-1 overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 pb-32">
+            {/* Changed: Show creating list loading state when a list is being created */}
+            {isCreatingList ? (
+              <SkeletonLoader variant="creating-list" />
+            ) : isUpdatingList ? (
+              // Changed: Show loading state while list is being updated
+              <>
+                <SkeletonLoader variant="header" />
+                <div className="space-y-3 mt-6">
+                  <SkeletonLoader variant="task" count={3} />
+                </div>
+              </>
+            ) : (
+              <>
+                <ClientListHeader listSlug={slug} refreshKey={refreshKey} />
+                <ClientTaskList listSlug={slug} refreshKey={refreshKey} />
+              </>
+            )}
+          </div>
         </div>
       </main>
     </div>

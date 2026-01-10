@@ -3,27 +3,31 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { List } from '@/types'
-import { Menu, X, CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
+import { Menu, X, CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
 import InviteModal from './InviteModal'
 import SkeletonLoader from './SkeletonLoader'
-import UserMenu from './UserMenu' // Changed: Added UserMenu import
+import UserMenu from './UserMenu'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface MobileHeaderProps {
   lists: List[]
   currentList?: List
   isLoading?: boolean
+  // Changed: Added syncingListSlugs prop for loading state on newly created lists
+  syncingListSlugs?: Set<string>
   onListDeleted: (listId: string) => void
   onListCreated: (list: List) => void
+  // Changed: Added onListReplaced callback for when API completes
+  onListReplaced?: (tempId: string, realList: List) => void
   onListUpdated: (listId: string, updates: Partial<List['metadata']>) => void
   onListClick?: (slug?: string) => void
-  onRefresh?: () => void // Changed: Added refresh callback
+  onRefresh?: () => void
 }
 
-export default function MobileHeader({ lists, currentList, isLoading = false, onListDeleted, onListCreated, onListUpdated, onListClick, onRefresh }: MobileHeaderProps) {
+export default function MobileHeader({ lists, currentList, isLoading = false, syncingListSlugs = new Set(), onListDeleted, onListCreated, onListReplaced, onListUpdated, onListClick, onRefresh }: MobileHeaderProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [editingList, setEditingList] = useState<List | null>(null)
   const [invitingList, setInvitingList] = useState<List | null>(null)
@@ -45,6 +49,13 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
 
   const handleListCreated = (list: List) => {
     onListCreated(list)
+  }
+
+  // Changed: Added handler to pass through list replacement
+  const handleListReplaced = (tempId: string, realList: List) => {
+    if (onListReplaced) {
+      onListReplaced(tempId, realList)
+    }
   }
 
   const handleOptimisticUpdate = (listId: string, updates: Partial<List['metadata']>) => {
@@ -69,7 +80,6 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
     setEditingList(list)
   }
 
-  // Changed: Added handleInviteClick function
   const handleInviteClick = (e: React.MouseEvent, list: List) => {
     e.preventDefault()
     e.stopPropagation()
@@ -94,8 +104,15 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
     })
   }
 
-  const handleListNavigation = (e: React.MouseEvent, slug?: string) => {
+  // Changed: Handle list navigation - prevent click on syncing lists
+  const handleListNavigation = (e: React.MouseEvent, slug?: string, isSyncing?: boolean) => {
     e.preventDefault()
+    
+    // Changed: Don't allow navigation to syncing lists
+    if (isSyncing) {
+      return
+    }
+    
     setIsOpen(false)
     if (onListClick) {
       onListClick(slug)
@@ -201,70 +218,97 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
                       </h3>
                     </div>
                     
-                    {lists.map((list) => (
-                      <div key={list.id} className="relative group">
-                        <button
-                          onClick={(e) => handleListNavigation(e, list.slug)}
-                          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                            currentList?.slug === list.slug
-                              ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
-                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}
-                        >
-                          <div 
-                            className="w-4 h-4 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
-                          />
-                          <span className="font-medium flex-1 truncate text-left">{list.title}</span>
-                          
+                    {lists.map((list) => {
+                      // Changed: Check if this list is still syncing (has temp ID)
+                      const isSyncing = syncingListSlugs.has(list.slug)
+                      
+                      return (
+                        <div key={list.id} className="relative group">
                           <button
-                            onClick={(e) => toggleMenu(e, list.id)}
-                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
-                            aria-label="List options"
+                            onClick={(e) => handleListNavigation(e, list.slug, isSyncing)}
+                            disabled={isSyncing}
+                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                              isSyncing
+                                ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50'
+                                : currentList?.slug === list.slug
+                                  ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                            }`}
                           >
-                            <MoreHorizontal className="w-4 h-4" />
-                          </button>
-                        </button>
-                        
-                        {openMenuId === list.id && (
-                          <div 
-                            ref={menuRef}
-                            className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
-                          >
-                            {/* Changed: Added invite button - only show if authenticated */}
-                            {isAuthenticated && (
+                            {/* Changed: Show spinner if syncing, otherwise show color dot */}
+                            {isSyncing ? (
+                              <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-gray-400" />
+                            ) : (
+                              <div 
+                                className="w-4 h-4 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
+                              />
+                            )}
+                            <span className={`font-medium flex-1 truncate text-left ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
+                              {list.title}
+                            </span>
+                            
+                            {/* Changed: Show "Saving..." text if syncing */}
+                            {isSyncing && (
+                              <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+                                Saving...
+                              </span>
+                            )}
+                            
+                            {/* More options button - hide if syncing */}
+                            {!isSyncing && (
                               <button
-                                onClick={(e) => handleInviteClick(e, list)}
-                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                onClick={(e) => toggleMenu(e, list.id)}
+                                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
+                                aria-label="List options"
                               >
-                                <UserPlus className="w-4 h-4" />
-                                Invite
+                                <MoreHorizontal className="w-4 h-4" />
                               </button>
                             )}
-                            <button
-                              onClick={(e) => handleEditClick(e, list)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                          </button>
+                          
+                          {/* Dropdown menu - don't show for syncing lists */}
+                          {openMenuId === list.id && !isSyncing && (
+                            <div 
+                              ref={menuRef}
+                              className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
                             >
-                              <Pencil className="w-4 h-4" />
-                              Edit
-                            </button>
-                            <button
-                              onClick={(e) => handleDeleteClick(e, list.id)}
-                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                              Delete
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                              {/* Changed: Added invite button - only show if authenticated */}
+                              {isAuthenticated && (
+                                <button
+                                  onClick={(e) => handleInviteClick(e, list)}
+                                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                >
+                                  <UserPlus className="w-4 h-4" />
+                                  Invite
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => handleEditClick(e, list)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <Pencil className="w-4 h-4" />
+                                Edit
+                              </button>
+                              <button
+                                onClick={(e) => handleDeleteClick(e, list.id)}
+                                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </>
                 )}
 
                 <div className="pt-4">
                   <CreateListForm 
                     onListCreated={handleListCreated}
+                    onListReplaced={handleListReplaced}
                   />
                 </div>
               </nav>
@@ -279,7 +323,7 @@ export default function MobileHeader({ lists, currentList, isLoading = false, on
           onClose={() => setEditingList(null)}
           onOptimisticUpdate={handleOptimisticUpdate}
           onOptimisticDelete={handleOptimisticDelete}
-          onRefresh={onRefresh} // Changed: Pass refresh callback
+          onRefresh={onRefresh}
         />
       )}
 
