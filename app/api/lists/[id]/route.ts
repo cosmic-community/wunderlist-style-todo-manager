@@ -1,24 +1,16 @@
 // app/api/lists/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { cosmic, getListById } from '@/lib/cosmic'
-import { getSession } from '@/lib/auth'
 
+// Changed: Removed authentication and ownership checks to allow anyone to edit public lists
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getSession()
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      )
-    }
-    
     const { id } = await params
     
-    // Check if user owns the list
+    // Check if list exists
     const list = await getListById(id)
     if (!list) {
       return NextResponse.json(
@@ -27,17 +19,7 @@ export async function PATCH(
       )
     }
     
-    const ownerId = typeof list.metadata.owner === 'string' 
-      ? list.metadata.owner 
-      : list.metadata.owner?.id
-    
-    if (ownerId !== session.user.id) {
-      return NextResponse.json(
-        { error: 'Not authorized to edit this list' },
-        { status: 403 }
-      )
-    }
-    
+    // Changed: Allow anyone to edit public lists - no authentication or ownership check required
     const data = await request.json()
     
     const updateData: Record<string, unknown> = {}
