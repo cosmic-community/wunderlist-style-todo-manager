@@ -250,8 +250,9 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                             style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
                           />
                         )}
+                        {/* Changed: Use metadata.name instead of title for list name display */}
                         <span className={`font-medium flex-1 truncate text-left ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
-                          {list.title}
+                          {list.metadata.name || list.title}
                         </span>
                         
                         {/* Changed: Show "Saving..." text if syncing */}

@@ -181,15 +181,20 @@ export default function MobileHeader({
             </span>
           </div>
           
-          {/* Changed: Removed ThemeToggle, only settings button remains */}
+          {/* Changed: Only show settings button when authenticated */}
           <div className="flex items-center gap-1">
-            <Link
-              href="/settings"
-              className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </Link>
+            {isAuthenticated ? (
+              <Link
+                href="/settings"
+                className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
+                aria-label="Settings"
+              >
+                <Settings className="w-5 h-5" />
+              </Link>
+            ) : (
+              // Changed: Empty placeholder to maintain layout balance
+              <div className="w-9 h-9" />
+            )}
           </div>
         </div>
       </header>
@@ -312,8 +317,9 @@ export default function MobileHeader({
                                 style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
                               />
                             )}
+                            {/* Changed: Use metadata.name instead of title for list name display */}
                             <span className={`font-medium flex-1 truncate text-left ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
-                              {list.title}
+                              {list.metadata.name || list.title}
                             </span>
                             
                             {/* Changed: Show "Saving..." text if syncing */}
