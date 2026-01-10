@@ -294,13 +294,9 @@ export default function ClientTaskList({ listSlug, refreshKey }: ClientTaskListP
     }
   }, [stopPolling, startPolling, pollForUpdates])
 
-  // Changed: Show loading while list is being found (for newly created lists)
+  // Changed: Show loading with proper spacing wrapper to match rendered list
   if (isLoading || (listSlug && !list && listRetryCount > 0 && listRetryCount < maxRetries)) {
-    return (
-      <div className="space-y-3">
-        <SkeletonLoader variant="task" count={3} />
-      </div>
-    )
+    return <SkeletonLoader variant="task" count={3} />
   }
 
   if (error) {

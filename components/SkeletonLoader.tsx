@@ -18,17 +18,17 @@ export default function SkeletonLoader({ variant = 'task', count = 1, className 
   if (variant === 'task') {
     return (
       // Changed: Added space-y-2 wrapper to match TaskList spacing and prevent layout shift
-      <div className="space-y-2">
+      <div className="space-y-2.5 md:space-y-2">
         {skeletons.map((i) => (
-          <div key={i} className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-3 border border-gray-200 dark:border-gray-800 animate-pulse ${className}`}>
+          <div key={i} className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-4 md:py-3 border border-gray-200 dark:border-gray-800 animate-pulse ${className}`}>
             {/* Changed: Conditionally reverse flex direction based on checkbox position */}
             <div 
               className="flex items-center gap-3"
               style={{ flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row' }}
             >
-              <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-800 flex-shrink-0" />
+              <div className="w-7 h-7 md:w-6 md:h-6 rounded-full bg-gray-200 dark:bg-gray-800 flex-shrink-0" />
               <div className="flex-1 space-y-2">
-                <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
+                <div className="h-5 md:h-4 bg-gray-200 dark:bg-gray-800 rounded w-3/4" />
               </div>
             </div>
           </div>
@@ -39,14 +39,15 @@ export default function SkeletonLoader({ variant = 'task', count = 1, className 
 
   if (variant === 'list') {
     return (
-      <>
+      // Changed: Added space-y-1 wrapper to match Sidebar list spacing
+      <div className="space-y-1">
         {skeletons.map((i) => (
           <div key={i} className={`flex items-center gap-3 px-3 py-2 animate-pulse ${className}`}>
             <div className="w-4 h-4 rounded-full bg-gray-200 dark:bg-gray-800 flex-shrink-0" />
             <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded flex-1" />
           </div>
         ))}
-      </>
+      </div>
     )
   }
 
