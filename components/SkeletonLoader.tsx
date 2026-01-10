@@ -17,7 +17,8 @@ export default function SkeletonLoader({ variant = 'task', count = 1, className 
 
   if (variant === 'task') {
     return (
-      <>
+      // Changed: Added space-y-2 wrapper to match TaskList spacing and prevent layout shift
+      <div className="space-y-2">
         {skeletons.map((i) => (
           <div key={i} className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-3 border border-gray-200 dark:border-gray-800 animate-pulse ${className}`}>
             {/* Changed: Conditionally reverse flex direction based on checkbox position */}
@@ -32,7 +33,7 @@ export default function SkeletonLoader({ variant = 'task', count = 1, className 
             </div>
           </div>
         ))}
-      </>
+      </div>
     )
   }
 

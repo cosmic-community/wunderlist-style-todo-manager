@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { List } from '@/types'
 import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
-import ThemeToggle from './ThemeToggle'
+// Changed: Removed ThemeToggle import
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
@@ -147,7 +147,8 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     <>
       <aside className="hidden md:flex md:flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
+          {/* Changed: Removed ThemeToggle, title now spans full width */}
+          <div className="flex items-center mb-6">
             {/* Changed: Made title clickable to navigate to All Tasks */}
             <button
               onClick={handleTitleClick}
@@ -158,7 +159,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
               {/* Changed: Made title clickable */}
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
             </button>
-            <ThemeToggle />
           </div>
           
           {/* Changed: Show user menu if authenticated, auth buttons with demo copy if not */}
