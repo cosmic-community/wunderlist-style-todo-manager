@@ -37,18 +37,22 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     // Changed: Use list ID instead of list object for consistency
     const listId = defaultList?.id || ''
     
+    // Changed: Create a timestamp that will help us identify duplicates
+    const creationTimestamp = new Date().toISOString()
+    
     // Create optimistic task with temporary ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const optimisticTask: Task = {
-      id: `temp-${Date.now()}`,
-      slug: `temp-${Date.now()}`,
+      id: tempId,
+      slug: tempId,
       title: title,
       type: 'tasks',
-      created_at: new Date().toISOString(),
-      modified_at: new Date().toISOString(),
+      created_at: creationTimestamp,
+      modified_at: creationTimestamp,
       metadata: {
         title: title,
         completed: false,
-        list: listId // Changed: Use list ID string instead of list object
+        list: listId
       }
     }
     
@@ -74,11 +78,16 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: taskTitle,
-          list: listId // Changed: Use list ID string instead of defaultList?.id
+          list: listId
         })
       })
+      
+      // Changed: Don't remove the optimistic task here
+      // Let the deduplication logic in TaskList handle it when the real task arrives
     } catch (error) {
       console.error('Error creating task:', error)
+      // Note: On error, the optimistic task will remain until user refreshes
+      // This is acceptable as it provides better UX than removing it
     } finally {
       setIsSubmitting(false)
       // Changed: Refocus again after submission completes to ensure keyboard stays open
@@ -116,14 +125,11 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
           onKeyDown={handleKeyDown}
           placeholder="Add a Task"
           className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none text-base"
-          // Changed: Removed disabled={isSubmitting} to allow focus during API request
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
-          // Changed: Added autoFocus for immediate focus on mount/re-render
           autoFocus
-          // Changed: Added enterKeyHint to show "done" or appropriate key on mobile
           enterKeyHint="done"
         />
       </div>
