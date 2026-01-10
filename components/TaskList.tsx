@@ -23,8 +23,6 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   const [showCompleted, setShowCompleted] = useState(false)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const mountedRef = useRef(true)
-  // Track temporary task IDs for newly added tasks
-  const pendingNewTasksRef = useRef<Set<string>>(new Set())
   // Track pending state changes for existing tasks (keyed by task ID)
   const pendingStateChangesRef = useRef<Map<string, PendingTaskState>>(new Map())
   // Changed: Track deleted task IDs to prevent them from reappearing on fetch
@@ -38,20 +36,79 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   const currentList = listSlug ? lists.find(l => l.slug === listSlug) : null
   const listName = currentList?.metadata?.name
 
+  // Changed: Smart deduplication function to detect and merge duplicate tasks
+  const deduplicateTasks = useCallback((taskList: Task[]): Task[] => {
+    const seen = new Map<string, Task>()
+    const result: Task[] = []
+    
+    for (const task of taskList) {
+      // Skip deleted tasks
+      if (deletedTaskIdsRef.current.has(task.id)) {
+        continue
+      }
+      
+      // Create a unique key based on title and list to detect duplicates
+      // Use the first few characters of created_at as well to handle rapid additions
+      const listId = typeof task.metadata.list === 'string' 
+        ? task.metadata.list 
+        : task.metadata.list?.id || ''
+      
+      const uniqueKey = `${task.metadata.title.trim().toLowerCase()}|${listId}`
+      
+      const existingTask = seen.get(uniqueKey)
+      
+      if (existingTask) {
+        // We found a duplicate! Decide which one to keep
+        // Prefer the one with a real ID (not starting with 'temp-')
+        const keepNew = !task.id.startsWith('temp-')
+        const keepExisting = !existingTask.id.startsWith('temp-')
+        
+        if (keepNew && !keepExisting) {
+          // New task is real, existing is temp - replace it
+          seen.set(uniqueKey, task)
+          // Replace in result array
+          const index = result.findIndex(t => t.id === existingTask.id)
+          if (index !== -1) {
+            result[index] = task
+          }
+        } else if (!keepNew && keepExisting) {
+          // Existing is real, new is temp - keep existing, skip new
+          continue
+        } else if (keepNew && keepExisting) {
+          // Both are real IDs - keep the one with the earlier created_at
+          const newTime = new Date(task.created_at || '').getTime()
+          const existingTime = new Date(existingTask.created_at || '').getTime()
+          
+          if (newTime && existingTime && newTime < existingTime) {
+            seen.set(uniqueKey, task)
+            const index = result.findIndex(t => t.id === existingTask.id)
+            if (index !== -1) {
+              result[index] = task
+            }
+          }
+          // Otherwise keep existing
+        }
+        // If both are temp, keep existing (shouldn't happen in practice)
+      } else {
+        // First time seeing this task
+        seen.set(uniqueKey, task)
+        result.push(task)
+      }
+    }
+    
+    return result
+  }, [])
+
   // Changed: Smart merge of initialTasks with local state to preserve optimistic updates
   useEffect(() => {
     setTasks(prevTasks => {
-      // If we have no previous tasks, just use initialTasks
+      // If we have no previous tasks, just use initialTasks with deduplication
       if (prevTasks.length === 0) {
-        // Filter out any deleted tasks
-        return initialTasks.filter(t => !deletedTaskIdsRef.current.has(t.id))
+        return deduplicateTasks(initialTasks.filter(t => !deletedTaskIdsRef.current.has(t.id)))
       }
       
       // Create a map of current tasks by ID for quick lookup
       const currentTasksMap = new Map(prevTasks.map(t => [t.id, t]))
-      
-      // Create a map of new tasks from server
-      const serverTasksMap = new Map(initialTasks.map(t => [t.id, t]))
       
       // Build the merged task list
       const mergedTasks: Task[] = []
@@ -89,20 +146,20 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
         processedIds.add(serverTask.id)
       }
       
-      // Changed: Add any optimistically created tasks that aren't in server response yet
-      // But ONLY if they're still in the pending set (not removed after creation)
+      // Changed: Add optimistic tasks that haven't arrived from server yet
+      // These are temp tasks that will be deduplicated when real version arrives
       for (const localTask of prevTasks) {
-        if (!processedIds.has(localTask.id) && pendingNewTasksRef.current.has(localTask.id)) {
-          // This is a newly created task that hasn't synced yet
+        if (!processedIds.has(localTask.id) && localTask.id.startsWith('temp-')) {
           if (!deletedTaskIdsRef.current.has(localTask.id)) {
             mergedTasks.push(localTask)
           }
         }
       }
       
-      return mergedTasks
+      // Changed: Apply deduplication to handle optimistic tasks being replaced by real ones
+      return deduplicateTasks(mergedTasks)
     })
-  }, [initialTasks])
+  }, [initialTasks, deduplicateTasks])
 
   // Changed: Cleanup on unmount
   useEffect(() => {
@@ -115,18 +172,8 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
 
   // Handlers for optimistic updates
   const handleOptimisticAdd = useCallback((task: Task) => {
-    // Track this as a pending/optimistic new task
-    pendingNewTasksRef.current.add(task.id)
-    setTasks(prev => [task, ...prev])
-  }, [])
-
-  // Changed: Handler to remove optimistic task after successful creation
-  const handleOptimisticRemove = useCallback((taskId: string) => {
-    // Remove from pending tracking
-    pendingNewTasksRef.current.delete(taskId)
-    // Remove from UI
-    setTasks(prev => prev.filter(task => task.id !== taskId))
-  }, [])
+    setTasks(prev => deduplicateTasks([task, ...prev]))
+  }, [deduplicateTasks])
 
   // Changed: Toggle handler - add to celebrating set when completing
   const handleOptimisticToggle = useCallback((taskId: string) => {
@@ -172,7 +219,6 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
     deletedTaskIdsRef.current.add(taskId)
     
     // Remove from all pending tracking
-    pendingNewTasksRef.current.delete(taskId)
     pendingStateChangesRef.current.delete(taskId)
     pendingServerUpdatesRef.current.delete(taskId)
     // Changed: Also remove from celebrating if deleting
@@ -187,7 +233,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
     // This prevents the task from reappearing during the delete request
     setTimeout(() => {
       deletedTaskIdsRef.current.delete(taskId)
-    }, 10000) // Changed: Increased to 10 seconds for better reliability
+    }, 10000)
   }, [])
 
   const handleOptimisticUpdate = useCallback((taskId: string, updates: Partial<Task['metadata']>) => {
@@ -211,7 +257,6 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   const clearPendingState = useCallback((taskId: string) => {
     pendingStateChangesRef.current.delete(taskId)
     pendingServerUpdatesRef.current.delete(taskId)
-    pendingNewTasksRef.current.delete(taskId)
   }, [])
 
   // Changed: Include celebrating tasks in pending list so they stay visible during animation
@@ -280,7 +325,6 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
             lists={lists} 
             listSlug={listSlug} 
             onOptimisticAdd={handleOptimisticAdd}
-            onOptimisticRemove={handleOptimisticRemove}
           />
         </div>
       </div>

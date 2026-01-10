@@ -8,10 +8,9 @@ interface AddTaskFormProps {
   lists: List[]
   listSlug?: string
   onOptimisticAdd: (task: Task) => void
-  onOptimisticRemove?: (taskId: string) => void // Changed: Added callback to remove optimistic task
 }
 
-export default function AddTaskForm({ lists, listSlug, onOptimisticAdd, onOptimisticRemove }: AddTaskFormProps) {
+export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTaskFormProps) {
   // Changed: Get checkbox position from user preferences
   const { user } = useAuth()
   const checkboxPosition = user?.checkbox_position || 'left'
@@ -38,6 +37,9 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd, onOptimi
     // Changed: Use list ID instead of list object for consistency
     const listId = defaultList?.id || ''
     
+    // Changed: Create a timestamp that will help us identify duplicates
+    const creationTimestamp = new Date().toISOString()
+    
     // Create optimistic task with temporary ID
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const optimisticTask: Task = {
@@ -45,12 +47,12 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd, onOptimi
       slug: tempId,
       title: title,
       type: 'tasks',
-      created_at: new Date().toISOString(),
-      modified_at: new Date().toISOString(),
+      created_at: creationTimestamp,
+      modified_at: creationTimestamp,
       metadata: {
         title: title,
         completed: false,
-        list: listId // Changed: Use list ID string instead of list object
+        list: listId
       }
     }
     
@@ -71,29 +73,21 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd, onOptimi
     
     // Send to server in background
     try {
-      const response = await fetch('/api/tasks', {
+      await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: taskTitle,
-          list: listId // Changed: Use list ID string instead of defaultList?.id
+          list: listId
         })
       })
       
-      // Changed: After successful creation, remove the optimistic task
-      // The polling system will naturally bring in the real task from the server
-      if (response.ok && onOptimisticRemove) {
-        // Wait a brief moment to ensure server has processed, then remove optimistic task
-        setTimeout(() => {
-          onOptimisticRemove(tempId)
-        }, 100)
-      }
+      // Changed: Don't remove the optimistic task here
+      // Let the deduplication logic in TaskList handle it when the real task arrives
     } catch (error) {
       console.error('Error creating task:', error)
-      // Changed: On error, remove the optimistic task since it failed to create
-      if (onOptimisticRemove) {
-        onOptimisticRemove(tempId)
-      }
+      // Note: On error, the optimistic task will remain until user refreshes
+      // This is acceptable as it provides better UX than removing it
     } finally {
       setIsSubmitting(false)
       // Changed: Refocus again after submission completes to ensure keyboard stays open
@@ -131,14 +125,11 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd, onOptimi
           onKeyDown={handleKeyDown}
           placeholder="Add a Task"
           className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none text-base"
-          // Changed: Removed disabled={isSubmitting} to allow focus during API request
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="off"
           spellCheck="false"
-          // Changed: Added autoFocus for immediate focus on mount/re-render
           autoFocus
-          // Changed: Added enterKeyHint to show "done" or appropriate key on mobile
           enterKeyHint="done"
         />
       </div>
