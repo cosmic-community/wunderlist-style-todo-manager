@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { List } from '@/types'
 import { CheckSquare, Menu, X, Settings, MoreHorizontal, Pencil, Trash2, UserPlus, Inbox, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
-import ThemeToggle from './ThemeToggle'
+// Changed: Removed ThemeToggle import
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
@@ -181,8 +181,8 @@ export default function MobileHeader({
             </span>
           </div>
           
+          {/* Changed: Removed ThemeToggle, only settings button remains */}
           <div className="flex items-center gap-1">
-            <ThemeToggle />
             <Link
               href="/settings"
               className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
