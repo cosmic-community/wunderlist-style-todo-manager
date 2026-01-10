@@ -74,13 +74,6 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
   return (
     // Changed: Use h-screen with flex layout and overflow-hidden to prevent excessive scrolling
     <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden">
-      {/* Mobile Header - Changed: Pass handlers for client-side navigation */}
-      <ClientMobileHeader 
-        currentListSlug={currentListSlug}
-        onListChange={handleListChange}
-        onListRefresh={handleListRefresh}
-      />
-      
       {/* Desktop Sidebar - Changed: Pass onListChange to prevent sidebar reload */}
       <ClientSidebar 
         currentListSlug={currentListSlug}
@@ -89,9 +82,18 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
         onListRefresh={handleListRefresh}
       />
       
-      {/* Changed: Main Content - flex-1 with overflow-y-auto for internal scrolling only */}
-      <main className="flex-1 pt-20 md:pt-0 flex flex-col min-h-0">
+      {/* Changed: Main Content - removed pt-20 since mobile header is now sticky inside scroll container */}
+      <main className="flex-1 flex flex-col min-h-0">
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
+          {/* Changed: Mobile Header now inside scroll container with sticky positioning */}
+          <div className="md:hidden sticky top-0 z-40">
+            <ClientMobileHeader 
+              currentListSlug={currentListSlug}
+              onListChange={handleListChange}
+              onListRefresh={handleListRefresh}
+            />
+          </div>
+          
           <div className="max-w-2xl mx-auto px-4 pt-4 pb-32 md:py-8">
             {/* Changed: Show creating list loading state when a list is being created */}
             {isCreatingList ? (

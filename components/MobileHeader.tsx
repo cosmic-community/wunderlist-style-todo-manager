@@ -160,8 +160,8 @@ export default function MobileHeader({
 
   return (
     <>
-      {/* Changed: Fixed Mobile Header - increased sizes for better mobile readability */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 safe-area-inset-top">
+      {/* Changed: Mobile Header - now uses sticky positioning via parent wrapper for better iOS compatibility */}
+      <header className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 safe-area-inset-top">
         <div className="flex items-center justify-between px-4 py-4">
           <button
             onClick={() => setIsMenuOpen(true)}
