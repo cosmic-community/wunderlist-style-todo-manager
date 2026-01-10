@@ -179,7 +179,7 @@ export default function TaskCard({
   
   const confettiColors = getConfettiColors()
 
-  // Changed: Checkbox component for reuse
+  // Changed: Checkbox component for reuse - increased sizes for mobile
   const CheckboxButton = (
     <div className="relative flex-shrink-0 flex items-center">
       {/* Changed: Confetti celebration that radiates outward from center */}
@@ -203,14 +203,14 @@ export default function TaskCard({
         aria-label={task.metadata.completed ? 'Mark as incomplete' : 'Mark as complete'}
         disabled={isUpdating}
       >
-        {/* Changed: Circle with proper flex centering - use accent color */}
-        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
+        {/* Changed: Circle with proper flex centering - use accent color - increased from w-6 h-6 to w-7 h-7 on mobile */}
+        <div className={`w-7 h-7 md:w-6 md:h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ease-out ${
           showCheckmark
             ? 'bg-accent border-accent'
             : 'border-gray-300 dark:border-gray-600 hover:border-accent/60 dark:hover:border-accent/60'
         } ${showCelebration ? 'scale-110 ring-4 ring-accent/30 dark:ring-accent/30' : ''}`}>
           {showCheckmark && (
-            <svg className={`w-3 h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={`w-3.5 h-3.5 md:w-3 md:h-3 text-white transition-transform duration-200 ease-out ${showCelebration ? 'scale-110' : ''}`} fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
               <path d="M5 13l4 4L19 7"></path>
             </svg>
           )}
@@ -231,10 +231,10 @@ export default function TaskCard({
         ref={cardRef}
         className="relative"
       >
-        {/* Changed: Removed overflow-hidden to allow confetti to be visible outside the card */}
+        {/* Changed: Removed overflow-hidden to allow confetti to be visible outside the card - increased padding for mobile */}
         <div className="relative">
           <div 
-            className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800"
+            className="bg-white dark:bg-gray-900 rounded-xl px-4 py-4 md:py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800"
             style={{
               // Changed: Reverse flex direction when checkbox is on right
               flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
@@ -244,22 +244,22 @@ export default function TaskCard({
             {/* Changed: Checkbox with confetti positioned around it - allow overflow */}
             {CheckboxButton}
             
-            {/* Title - use showCheckmark for visual styling */}
-            <span className={`flex-1 text-base transition-all duration-300 ease-out ${
+            {/* Changed: Title - use showCheckmark for visual styling - increased text size on mobile */}
+            <span className={`flex-1 text-lg md:text-base transition-all duration-300 ease-out ${
               showCheckmark ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-white'
             }`}>
               {task.metadata.title}
             </span>
             
-            {/* Delete button - only show for completed tasks that aren't celebrating */}
+            {/* Changed: Delete button - only show for completed tasks that aren't celebrating - increased touch target */}
             {task.metadata.completed && !showCelebration && (
               <button
                 onClick={handleDelete}
-                className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                className="flex-shrink-0 p-2 md:p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 aria-label="Delete task"
                 disabled={isDeleting}
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             )}
           </div>

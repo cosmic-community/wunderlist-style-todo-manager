@@ -266,8 +266,8 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
   
   return (
     <>
-      {/* Changed: Task list with proper spacing - added pb-24 to ensure last item is accessible above fixed add task form */}
-      <div className="space-y-2 pb-24">
+      {/* Changed: Task list with proper spacing - added pb-28 for larger mobile bottom padding */}
+      <div className="space-y-2.5 md:space-y-2 pb-28 md:pb-24">
         {/* Pending Tasks */}
         {pendingTasks.map((task) => (
           <TaskCard 
@@ -282,19 +282,20 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
           />
         ))}
         
-        {/* Completed Section - Collapsible */}
+        {/* Changed: Completed Section - Collapsible - increased touch targets */}
         {completedTasks.length > 0 && (
           <div className="pt-4">
             <button
               onClick={() => setShowCompleted(!showCompleted)}
-              className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors py-2"
+              className="flex items-center gap-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors py-3 md:py-2"
             >
-              <ChevronRight className={`w-4 h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
-              <span className="text-sm font-medium">Completed ({completedTasks.length})</span>
+              <ChevronRight className={`w-5 h-5 md:w-4 md:h-4 transition-transform ${showCompleted ? 'rotate-90' : ''}`} />
+              {/* Changed: Increased text size on mobile */}
+              <span className="text-base md:text-sm font-medium">Completed ({completedTasks.length})</span>
             </button>
             
             {showCompleted && (
-              <div className="space-y-2 mt-2">
+              <div className="space-y-2.5 md:space-y-2 mt-2">
                 {completedTasks.map((task) => (
                   <TaskCard 
                     key={task.id} 
@@ -318,8 +319,8 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
         )}
       </div>
       
-      {/* Changed: Fixed Add Task Form at bottom - proper positioning */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 p-4 z-20">
+      {/* Changed: Fixed Add Task Form at bottom - proper positioning with larger padding on mobile */}
+      <div className="fixed bottom-0 left-0 right-0 md:left-64 bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 p-5 md:p-4 z-20">
         <div className="max-w-2xl mx-auto">
           <AddTaskForm 
             lists={lists} 

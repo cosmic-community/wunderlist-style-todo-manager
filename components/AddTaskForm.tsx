@@ -1,76 +1,50 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { List, Task } from '@/types'
-import { useAuth } from '@/contexts/AuthContext'
+import { Task, List } from '@/types'
+import { Plus } from 'lucide-react'
 
 interface AddTaskFormProps {
   lists: List[]
   listSlug?: string
-  onOptimisticAdd: (task: Task) => void
+  onOptimisticAdd?: (task: Task) => void
 }
 
 export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTaskFormProps) {
-  // Changed: Get checkbox position from user preferences
-  const { user } = useAuth()
-  const checkboxPosition = user?.checkbox_position || 'left'
-  
   const [title, setTitle] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  
-  const defaultList = lists.find(list => list.slug === listSlug)
-  
-  // Changed: Focus input on mount for immediate task entry
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus()
-    }
-  }, [])
-  
+
+  // Get current list ID from slug
+  const currentList = listSlug ? lists.find(l => l.slug === listSlug) : null
+  const currentListId = currentList?.id
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title.trim() || isSubmitting) return
-    
+
     setIsSubmitting(true)
-    
-    // Changed: Use list ID instead of list object for consistency
-    const listId = defaultList?.id || ''
-    
-    // Changed: Create a timestamp that will help us identify duplicates
-    const creationTimestamp = new Date().toISOString()
-    
-    // Create optimistic task with temporary ID
-    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const taskTitle = title.trim()
+    setTitle('')
+
+    // Create optimistic task
     const optimisticTask: Task = {
-      id: tempId,
-      slug: tempId,
-      title: title,
-      type: 'tasks',
-      created_at: creationTimestamp,
-      modified_at: creationTimestamp,
+      id: `temp-${Date.now()}`,
+      title: taskTitle,
+      slug: taskTitle.toLowerCase().replace(/\s+/g, '-'),
+      created_at: new Date().toISOString(),
       metadata: {
-        title: title,
+        title: taskTitle,
         completed: false,
-        list: listId
+        list: currentListId || ''
       }
     }
-    
-    // Optimistically add the task immediately
-    onOptimisticAdd(optimisticTask)
-    
-    // Reset form immediately
-    const taskTitle = title
-    setTitle('')
-    
-    // Changed: Immediately refocus the input after clearing - don't wait for API
-    // Using requestAnimationFrame ensures this happens after React's state update
-    requestAnimationFrame(() => {
-      if (inputRef.current) {
-        inputRef.current.focus()
-      }
-    })
-    
+
+    // Add optimistically
+    if (onOptimisticAdd) {
+      onOptimisticAdd(optimisticTask)
+    }
+
     // Send to server in background
     try {
       await fetch('/api/tasks', {
@@ -78,61 +52,46 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: taskTitle,
-          list: listId
+          list_id: currentListId
         })
       })
-      
-      // Changed: Don't remove the optimistic task here
-      // Let the deduplication logic in TaskList handle it when the real task arrives
     } catch (error) {
       console.error('Error creating task:', error)
-      // Note: On error, the optimistic task will remain until user refreshes
-      // This is acceptable as it provides better UX than removing it
+      // Note: We could revert the optimistic add here if needed
     } finally {
       setIsSubmitting(false)
-      // Changed: Refocus again after submission completes to ensure keyboard stays open
-      if (inputRef.current) {
-        inputRef.current.focus()
-      }
     }
   }
-  
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setTitle('')
-      inputRef.current?.blur()
-    }
-  }
-  
-  // Changed: Always show the input form - no collapsed button state
-  // This allows for rapid task entry without clicking to expand
-  // Changed: Added relative z-index to ensure form appears above task checkmarks
+
   return (
-    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-900 rounded-xl px-4 py-3 border border-gray-200 dark:border-gray-800 relative z-20">
-      <div 
-        className="flex items-center gap-3"
-        style={{
-          // Changed: Reverse flex direction when checkbox is on right
-          flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
-        }}
-      >
-        <div className="w-6 h-6 rounded-full border-2 border-gray-300 dark:border-gray-600 flex-shrink-0" />
-        <input
-          ref={inputRef}
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Add a Task"
-          className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 outline-none text-base"
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck="false"
-          autoFocus
-          enterKeyHint="done"
-        />
+    <form onSubmit={handleSubmit} className="flex items-center gap-3">
+      {/* Changed: Increased icon size for mobile */}
+      <div className="flex-shrink-0">
+        <div className="w-7 h-7 md:w-6 md:h-6 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+          <Plus className="w-4 h-4 md:w-3.5 md:h-3.5 text-gray-400 dark:text-gray-500" />
+        </div>
       </div>
+      
+      {/* Changed: Increased text size and padding for mobile */}
+      <input
+        ref={inputRef}
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Add a Task"
+        className="flex-1 bg-transparent border-none outline-none text-lg md:text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 py-2"
+        disabled={isSubmitting}
+      />
+      
+      {title.trim() && (
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="flex-shrink-0 px-4 py-2.5 md:py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium text-base md:text-sm transition-colors disabled:opacity-50"
+        >
+          Add
+        </button>
+      )}
     </form>
   )
 }
