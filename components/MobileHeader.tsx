@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { List } from '@/types'
-import { CheckSquare, Menu, X, Settings, MoreHorizontal, Pencil, Trash2, UserPlus, Inbox, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
-// Changed: Removed ThemeToggle import
+import { CheckSquare, Menu, X, MoreHorizontal, Pencil, Trash2, UserPlus, Inbox, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
+// Changed: Removed Settings import as we're removing the settings button from mobile header
 import CreateListForm from './CreateListForm'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
@@ -181,21 +181,8 @@ export default function MobileHeader({
             </span>
           </div>
           
-          {/* Changed: Only show settings button when authenticated */}
-          <div className="flex items-center gap-1">
-            {isAuthenticated ? (
-              <Link
-                href="/settings"
-                className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-                aria-label="Settings"
-              >
-                <Settings className="w-5 h-5" />
-              </Link>
-            ) : (
-              // Changed: Empty placeholder to maintain layout balance
-              <div className="w-9 h-9" />
-            )}
-          </div>
+          {/* Changed: Removed settings button - now just an empty placeholder to maintain layout balance */}
+          <div className="w-10 h-10" />
         </div>
       </header>
 
@@ -297,30 +284,34 @@ export default function MobileHeader({
                       
                       return (
                         <div key={list.id} className="relative group">
-                          <button
-                            onClick={(e) => handleListNavigation(e, list.slug, isSyncing)}
-                            disabled={isSyncing}
-                            className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                              isSyncing
-                                ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50'
-                                : currentListSlug === list.slug
-                                  ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
-                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                            }`}
-                          >
-                            {/* Changed: Show spinner if syncing, otherwise show color dot */}
-                            {isSyncing ? (
-                              <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-gray-400" />
-                            ) : (
-                              <div 
-                                className="w-4 h-4 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
-                              />
-                            )}
-                            {/* Changed: Use metadata.name instead of title for list name display */}
-                            <span className={`font-medium flex-1 truncate text-left ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
-                              {list.metadata.name || list.title}
-                            </span>
+                          {/* Changed: Use div wrapper with flex to separate clickable areas for touch devices */}
+                          <div className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                            isSyncing
+                              ? 'opacity-60 bg-gray-50 dark:bg-gray-800/50'
+                              : currentListSlug === list.slug
+                                ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
+                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          }`}>
+                            {/* Changed: Main clickable area for navigation - takes most of the space */}
+                            <button
+                              onClick={(e) => handleListNavigation(e, list.slug, isSyncing)}
+                              disabled={isSyncing}
+                              className={`flex-1 flex items-center gap-3 text-left ${isSyncing ? 'cursor-not-allowed' : ''}`}
+                            >
+                              {/* Changed: Show spinner if syncing, otherwise show color dot */}
+                              {isSyncing ? (
+                                <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-gray-400" />
+                              ) : (
+                                <div 
+                                  className="w-4 h-4 rounded-full flex-shrink-0"
+                                  style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
+                                />
+                              )}
+                              {/* Changed: Use metadata.name instead of title for list name display */}
+                              <span className={`font-medium flex-1 truncate ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
+                                {list.metadata.name || list.title}
+                              </span>
+                            </button>
                             
                             {/* Changed: Show "Saving..." text if syncing */}
                             {isSyncing && (
@@ -329,17 +320,17 @@ export default function MobileHeader({
                               </span>
                             )}
                             
-                            {/* More options button - hide if syncing */}
+                            {/* Changed: More options button - always visible on mobile (removed opacity-0 group-hover) to fix double-tap issue */}
                             {!isSyncing && (
                               <button
                                 onClick={(e) => toggleMenu(e, list.id)}
-                                className="opacity-0 group-hover:opacity-100 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-opacity"
+                                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
                                 aria-label="List options"
                               >
                                 <MoreHorizontal className="w-4 h-4" />
                               </button>
                             )}
-                          </button>
+                          </div>
                           
                           {/* Dropdown menu - don't show for syncing lists */}
                           {openMenuId === list.id && !isSyncing && (
