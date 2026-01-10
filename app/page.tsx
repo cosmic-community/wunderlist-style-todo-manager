@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import ClientTaskList from '@/components/ClientTaskList'
 import ClientSidebar from '@/components/ClientSidebar'
 import ClientMobileHeader from '@/components/ClientMobileHeader'
+import ClientListHeader from '@/components/ClientListHeader'
 import CosmicBadge from '@/components/CosmicBadge'
 
 export default function Home() {
@@ -50,11 +51,15 @@ export default function Home() {
         <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 pb-32">
           {/* Changed: Show different content based on selected list */}
           {currentListSlug ? (
-            <ClientTaskList 
-              key={`${currentListSlug}-${refreshKey}`}
-              listSlug={currentListSlug} 
-              refreshKey={refreshKey}
-            />
+            <>
+              {/* Changed: Show list header when a list is selected */}
+              <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
+              <ClientTaskList 
+                key={`${currentListSlug}-${refreshKey}`}
+                listSlug={currentListSlug} 
+                refreshKey={refreshKey}
+              />
+            </>
           ) : (
             <>
               {/* Changed: Page title */}
