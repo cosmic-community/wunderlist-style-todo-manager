@@ -28,6 +28,7 @@ export default function ListPageClient({ slug }: ListPageClientProps) {
   }, [])
 
   return (
+    // Changed: Use h-screen with fixed positioning approach to prevent excessive scrolling
     <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden">
       {/* Mobile Header */}
       <ClientMobileHeader currentListSlug={slug} onListRefresh={handleListRefresh} />
@@ -39,8 +40,8 @@ export default function ListPageClient({ slug }: ListPageClientProps) {
         onListRefresh={handleListRefresh}
       />
       
-      {/* Changed: Main Content - properly scrollable with fixed header space */}
-      <main className="flex-1 pt-16 md:pt-0 overflow-y-auto">
+      {/* Changed: Main Content - contained within flex layout, no extra scrolling */}
+      <main className="flex-1 pt-16 md:pt-0 overflow-y-auto min-h-0">
         <div className="max-w-2xl mx-auto px-4 py-6 md:py-8 pb-32">
           {/* Changed: Show creating list loading state when a list is being created */}
           {isCreatingList ? (

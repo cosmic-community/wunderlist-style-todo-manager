@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { List } from '@/types'
-import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon } from 'lucide-react'
+import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2 } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import ThemeToggle from './ThemeToggle'
 import CreateListForm from './CreateListForm'
@@ -16,7 +16,7 @@ interface SidebarProps {
   lists: List[]
   currentListSlug?: string
   isLoading?: boolean
-  // Changed: Keep syncingListSlugs for internal tracking but don't show visual indicator
+  // Changed: Track lists that are still syncing (have temporary IDs)
   syncingListSlugs?: Set<string>
   onListCreated?: (list: List) => void
   onListReplaced?: (tempId: string, realList: List) => void
@@ -108,9 +108,14 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     })
   }
 
-  // Changed: Handle list navigation - allow navigation even for syncing lists (they'll load once ready)
-  const handleListNavigation = (e: React.MouseEvent, slug?: string) => {
+  // Changed: Handle list navigation - prevent click on syncing lists
+  const handleListNavigation = (e: React.MouseEvent, slug?: string, isSyncing?: boolean) => {
     e.preventDefault()
+    
+    // Changed: Don't allow navigation to syncing lists
+    if (isSyncing) {
+      return
+    }
     
     if (onListClick) {
       onListClick(slug)
@@ -220,27 +225,41 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                 </div>
                 
                 {lists.map((list) => {
-                  // Changed: Don't show any syncing indicator - list appears normal
+                  // Changed: Check if this list is still syncing (has temp ID)
                   const isSyncing = syncingListSlugs.has(list.slug)
                   
                   return (
                     <div key={list.id} className="relative group">
                       <button
-                        onClick={(e) => handleListNavigation(e, list.slug)}
+                        onClick={(e) => handleListNavigation(e, list.slug, isSyncing)}
+                        disabled={isSyncing}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                          currentListSlug === list.slug
-                            ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                          isSyncing
+                            ? 'opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800/50'
+                            : currentListSlug === list.slug
+                              ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
                         }`}
                       >
-                        {/* Changed: Always show color dot, no spinner */}
-                        <div 
-                          className="w-4 h-4 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
-                        />
-                        <span className="font-medium flex-1 truncate text-left">
+                        {/* Changed: Show spinner if syncing, otherwise show color dot */}
+                        {isSyncing ? (
+                          <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-gray-400" />
+                        ) : (
+                          <div 
+                            className="w-4 h-4 rounded-full flex-shrink-0"
+                            style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
+                          />
+                        )}
+                        <span className={`font-medium flex-1 truncate text-left ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
                           {list.title}
                         </span>
+                        
+                        {/* Changed: Show "Saving..." text if syncing */}
+                        {isSyncing && (
+                          <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
+                            Saving...
+                          </span>
+                        )}
                         
                         {/* More options button - hide if syncing */}
                         {!isSyncing && (
