@@ -34,6 +34,9 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated } = useAuth()
+  
+  // Changed: Get bucket slug from environment for Cosmic button
+  const bucketSlug = process.env.NEXT_PUBLIC_COSMIC_BUCKET_SLUG || 'cosmic-todo'
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -146,8 +149,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
   return (
     <>
       <aside className="hidden md:flex md:flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
-        <div className="p-6">
-          {/* Changed: Removed ThemeToggle, title now spans full width */}
+        <div className="flex-1 p-6">
           <div className="flex items-center mb-6">
             {/* Changed: Made title clickable to navigate to All Tasks */}
             <button
@@ -207,7 +209,8 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
               <span className="font-medium">All Tasks</span>
             </button>
             
-            {isLoading ? (
+            {/* Changed: Only show skeleton during initial load, not when switching lists */}
+            {isLoading && lists.length === 0 ? (
               <div className="pt-4">
                 <div className="pb-2 px-3">
                   <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -322,6 +325,23 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
               />
             </div>
           </nav>
+        </div>
+        
+        {/* Changed: Added Built with Cosmic button at bottom of sidebar */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+          <a
+            href={`https://www.cosmicjs.com?utm_source=bucket_${bucketSlug}&utm_medium=referral&utm_campaign=app_badge&utm_content=built_with_cosmic`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
+          >
+            <img 
+              src="https://cdn.cosmicjs.com/b67de7d0-c810-11ed-b01d-23d7b265c299-logo508x500.svg" 
+              alt="Cosmic Logo" 
+              className="w-4 h-4"
+            />
+            Built with Cosmic
+          </a>
         </div>
       </aside>
 

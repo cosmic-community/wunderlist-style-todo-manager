@@ -48,12 +48,13 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
 
     // Send to server in background
     try {
+      // Changed: Fixed API payload - use 'list' instead of 'list_id' to match API route
       await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: taskTitle,
-          list_id: currentListId
+          list: currentListId || '' // Changed: Use 'list' to match API route expectations
         })
       })
     } catch (error) {

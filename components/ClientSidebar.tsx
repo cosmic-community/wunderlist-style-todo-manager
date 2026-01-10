@@ -14,7 +14,8 @@ export interface ClientSidebarProps {
 
 export default function ClientSidebar({ currentListSlug, onListChange, onCreatingStateChange, onListRefresh }: ClientSidebarProps) {
   const [lists, setLists] = useState<List[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  // Changed: Remove isLoading state - sidebar lists should load silently
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   // Changed: Track lists that are still syncing (have temporary IDs)
   const [syncingListSlugs, setSyncingListSlugs] = useState<Set<string>>(new Set())
   const router = useRouter()
@@ -23,7 +24,7 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
 
   const fetchLists = useCallback(async () => {
     try {
-      setIsLoading(true)
+      // Changed: Don't show loading state when refetching
       const response = await fetch('/api/lists')
       if (response.ok) {
         const data = await response.json()
@@ -48,7 +49,7 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
     } catch (error) {
       console.error('Error fetching lists:', error)
     } finally {
-      setIsLoading(false)
+      setIsInitialLoad(false)
     }
   }, [])
 
@@ -164,7 +165,7 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
     <Sidebar 
       lists={lists} 
       currentListSlug={currentListSlug} 
-      isLoading={isLoading}
+      isLoading={isInitialLoad}
       syncingListSlugs={syncingListSlugs}
       onListCreated={handleListCreated}
       onListReplaced={handleListReplaced}
