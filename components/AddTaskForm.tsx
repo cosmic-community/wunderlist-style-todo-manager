@@ -8,9 +8,10 @@ interface AddTaskFormProps {
   lists: List[]
   listSlug?: string
   onOptimisticAdd: (task: Task) => void
+  onOptimisticRemove?: (taskId: string) => void // Changed: Added callback to remove optimistic task
 }
 
-export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTaskFormProps) {
+export default function AddTaskForm({ lists, listSlug, onOptimisticAdd, onOptimisticRemove }: AddTaskFormProps) {
   // Changed: Get checkbox position from user preferences
   const { user } = useAuth()
   const checkboxPosition = user?.checkbox_position || 'left'
@@ -38,9 +39,10 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     const listId = defaultList?.id || ''
     
     // Create optimistic task with temporary ID
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
     const optimisticTask: Task = {
-      id: `temp-${Date.now()}`,
-      slug: `temp-${Date.now()}`,
+      id: tempId,
+      slug: tempId,
       title: title,
       type: 'tasks',
       created_at: new Date().toISOString(),
@@ -69,7 +71,7 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
     
     // Send to server in background
     try {
-      await fetch('/api/tasks', {
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -77,8 +79,21 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
           list: listId // Changed: Use list ID string instead of defaultList?.id
         })
       })
+      
+      // Changed: After successful creation, remove the optimistic task
+      // The polling system will naturally bring in the real task from the server
+      if (response.ok && onOptimisticRemove) {
+        // Wait a brief moment to ensure server has processed, then remove optimistic task
+        setTimeout(() => {
+          onOptimisticRemove(tempId)
+        }, 100)
+      }
     } catch (error) {
       console.error('Error creating task:', error)
+      // Changed: On error, remove the optimistic task since it failed to create
+      if (onOptimisticRemove) {
+        onOptimisticRemove(tempId)
+      }
     } finally {
       setIsSubmitting(false)
       // Changed: Refocus again after submission completes to ensure keyboard stays open

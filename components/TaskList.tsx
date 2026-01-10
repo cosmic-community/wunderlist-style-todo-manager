@@ -89,7 +89,8 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
         processedIds.add(serverTask.id)
       }
       
-      // Add any optimistically created tasks that aren't in server response yet
+      // Changed: Add any optimistically created tasks that aren't in server response yet
+      // But ONLY if they're still in the pending set (not removed after creation)
       for (const localTask of prevTasks) {
         if (!processedIds.has(localTask.id) && pendingNewTasksRef.current.has(localTask.id)) {
           // This is a newly created task that hasn't synced yet
@@ -117,6 +118,14 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
     // Track this as a pending/optimistic new task
     pendingNewTasksRef.current.add(task.id)
     setTasks(prev => [task, ...prev])
+  }, [])
+
+  // Changed: Handler to remove optimistic task after successful creation
+  const handleOptimisticRemove = useCallback((taskId: string) => {
+    // Remove from pending tracking
+    pendingNewTasksRef.current.delete(taskId)
+    // Remove from UI
+    setTasks(prev => prev.filter(task => task.id !== taskId))
   }, [])
 
   // Changed: Toggle handler - add to celebrating set when completing
@@ -271,6 +280,7 @@ export default function TaskList({ initialTasks, lists, listSlug }: TaskListProp
             lists={lists} 
             listSlug={listSlug} 
             onOptimisticAdd={handleOptimisticAdd}
+            onOptimisticRemove={handleOptimisticRemove}
           />
         </div>
       </div>
