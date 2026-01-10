@@ -1,32 +1,50 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import ClientTaskList from '@/components/ClientTaskList'
 import ClientSidebar from '@/components/ClientSidebar'
 import ClientMobileHeader from '@/components/ClientMobileHeader'
 import ClientListHeader from '@/components/ClientListHeader'
 import SkeletonLoader from '@/components/SkeletonLoader'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 
 interface ListPageClientProps {
   slug: string
 }
 
-export default function ListPageClient({ slug }: ListPageClientProps) {
+export default function ListPageClient({ slug: initialSlug }: ListPageClientProps) {
   const router = useRouter()
-  // Changed: Track current list slug for client-side navigation without sidebar reload
-  const [currentListSlug, setCurrentListSlug] = useState<string | undefined>(slug)
+  const pathname = usePathname()
+  
+  // Changed: Track current list slug for client-side navigation without page reload
+  const [currentListSlug, setCurrentListSlug] = useState<string | undefined>(
+    initialSlug === '' ? undefined : initialSlug
+  )
+  
   // Changed: Track when a list is being created to show loading state
   const [isCreatingList, setIsCreatingList] = useState(false)
+  
   // Changed: Track refresh key to trigger list area refresh when list is updated
   const [refreshKey, setRefreshKey] = useState(0)
+  
   // Changed: Track if list is being updated to show loading state
   const [isUpdatingList, setIsUpdatingList] = useState(false)
 
-  // Changed: Callback to handle list selection without reloading sidebar
+  // Changed: Sync currentListSlug with URL changes (browser back/forward)
+  useEffect(() => {
+    if (pathname === '/') {
+      setCurrentListSlug(undefined)
+    } else if (pathname.startsWith('/lists/')) {
+      const slugFromUrl = pathname.replace('/lists/', '')
+      setCurrentListSlug(slugFromUrl)
+    }
+  }, [pathname])
+
+  // Changed: Callback to handle list selection without reloading page
   const handleListChange = useCallback((newSlug?: string) => {
     setCurrentListSlug(newSlug)
-    // Changed: Update URL without causing page reload
+    
+    // Changed: Update URL without causing page reload using router.replace
     if (newSlug) {
       router.replace(`/lists/${newSlug}`, { scroll: false })
     } else {
