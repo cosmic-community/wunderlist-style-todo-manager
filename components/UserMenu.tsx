@@ -3,14 +3,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { LogOut, ChevronDown, Settings } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 
 export default function UserMenu() {
   const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const router = useRouter()
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -25,7 +22,7 @@ export default function UserMenu() {
 
   const handleLogout = async () => {
     await logout()
-    router.push('/login')
+    window.location.href = '/login'
   }
 
   // Changed: Navigate to all tasks when clicking the user button
@@ -64,17 +61,14 @@ export default function UserMenu() {
             </p>
           </div>
           
-          {/* Changed: Removed All Tasks link from user dropdown menu */}
-          
-          {/* Changed: Settings link */}
-          <Link
+          {/* Settings link */}
+          <a
             href="/settings"
-            onClick={() => setIsOpen(false)}
             className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             <Settings className="w-4 h-4" />
             Settings
-          </Link>
+          </a>
           
           <button
             onClick={handleLogout}
