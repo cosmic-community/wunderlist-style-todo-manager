@@ -19,8 +19,8 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
   const [tasks, setTasks] = useState<Task[]>([])
   const [lists, setLists] = useState<List[]>([])
   const [list, setList] = useState<List | null>(null)
-  // Changed: Start with isLoading false to prevent skeleton on navigation
-  const [isLoading, setIsLoading] = useState(false)
+  // Changed: Start with isLoading true to show skeleton until data loads
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [listRetryCount, setListRetryCount] = useState(0)
   const maxRetries = 10
@@ -35,8 +35,8 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
   const isMountedRef = useRef(true)
   // Changed: Track last fetch timestamp to detect changes
   const lastTasksHashRef = useRef<string>('')
-  // Changed: Track if this is the initial mount
-  const isInitialMountRef = useRef(true)
+  // Changed: Track the previous listSlug to detect navigation
+  const prevListSlugRef = useRef<string | undefined>(listSlug)
 
   // Changed: Generate a simple hash of tasks for change detection
   const generateTasksHash = useCallback((taskList: Task[]): string => {
@@ -175,10 +175,6 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
     
     const loadData = async () => {
       isFetchingRef.current = true
-      // Changed: Only show loading on initial mount, not on list changes
-      if (isInitialMountRef.current) {
-        setIsLoading(true)
-      }
       setError(null)
       
       const { found, foundList } = await fetchLists()
@@ -220,7 +216,6 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
       
       if (isMountedRef.current) {
         setIsLoading(false)
-        isInitialMountRef.current = false
       }
       isFetchingRef.current = false
       
@@ -233,11 +228,21 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
 
   // Changed: Reset refs when listSlug changes (navigating to different list)
   useEffect(() => {
+    // Only trigger loading state if the listSlug actually changed (not on initial mount)
+    if (prevListSlugRef.current !== listSlug) {
+      // Show loading skeleton when navigating to a different list
+      setIsLoading(true)
+      setTasks([]) // Clear old tasks to prevent flash of stale content
+    }
+    
     hasFetchedTasksRef.current = false
     lastListIdRef.current = null
     lastTasksHashRef.current = ''
     setList(null)
     setListRetryCount(0)
+    
+    // Update the previous slug ref
+    prevListSlugRef.current = listSlug
   }, [listSlug])
 
   // Changed: Effect to refresh data when refreshKey changes (triggered by parent after list update)
@@ -298,8 +303,8 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
     }
   }, [stopPolling, startPolling, pollForUpdates])
 
-  // Changed: Only show loading on initial mount with retry logic
-  if (isLoading && isInitialMountRef.current && (listSlug && !list && listRetryCount > 0 && listRetryCount < maxRetries)) {
+  // Changed: Show loading skeleton when loading (initial load or navigating between lists)
+  if (isLoading) {
     return <SkeletonLoader variant="task" count={3} />
   }
 

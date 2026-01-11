@@ -6,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import ThemeSyncWrapper from '@/components/ThemeSyncWrapper'
 import PWAInstallPrompt from '@/components/PWAInstallPrompt'
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration'
+import ToastProvider from '@/components/ToastProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -102,6 +103,8 @@ export default function RootLayout({
             <PWAInstallPrompt />
             {/* Changed: Added service worker registration */}
             <ServiceWorkerRegistration />
+            {/* Toast notifications */}
+            <ToastProvider />
             <script src="/dashboard-console-capture.js"></script>
           </AuthProvider>
         </ThemeProvider>

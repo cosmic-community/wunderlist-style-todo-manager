@@ -7,6 +7,7 @@ import { useTheme } from '@/components/ThemeProvider'
 import { CheckSquare, ArrowLeft, Loader2, AlertCircle, CheckCircle, User, Lock, Mail, Send, Palette, LayoutList, Sparkles } from 'lucide-react'
 import Link from 'next/link'
 import { CheckboxPosition, ColorTheme, StyleTheme } from '@/types'
+import toast from 'react-hot-toast'
 
 export default function SettingsPage() {
   const { user, isLoading: authLoading, isAuthenticated, refreshUser, updateCheckboxPosition, updateStyleTheme } = useAuth()
@@ -27,8 +28,6 @@ export default function SettingsPage() {
   // Changed: Preferences state
   const [checkboxPosition, setCheckboxPosition] = useState<CheckboxPosition>('left')
   const [preferencesLoading, setPreferencesLoading] = useState(false)
-  const [preferencesSuccess, setPreferencesSuccess] = useState('')
-  const [preferencesError, setPreferencesError] = useState('')
 
   // Initialize form with user data
   useEffect(() => {
@@ -63,12 +62,15 @@ export default function SettingsPage() {
       if (response.ok) {
         setProfileSuccess('Profile updated successfully!')
         await refreshUser()
+        toast.success('Profile updated')
         setTimeout(() => setProfileSuccess(''), 3000)
       } else {
         setProfileError(data.error || 'Failed to update profile')
+        toast.error(data.error || 'Failed to update profile')
       }
     } catch {
       setProfileError('Network error')
+      toast.error('Network error')
     }
 
     setProfileLoading(false)
@@ -93,12 +95,15 @@ export default function SettingsPage() {
 
       if (response.ok) {
         setResetSuccess('Password reset email sent! Check your inbox for instructions.')
+        toast.success('Password reset email sent')
         setTimeout(() => setResetSuccess(''), 5000)
       } else {
         setResetError(data.error || 'Failed to send reset email')
+        toast.error(data.error || 'Failed to send reset email')
       }
     } catch {
       setResetError('Network error')
+      toast.error('Network error')
     }
 
     setResetLoading(false)
@@ -106,8 +111,6 @@ export default function SettingsPage() {
 
   // Changed: Handle checkbox position change
   const handleCheckboxPositionChange = async (position: CheckboxPosition) => {
-    setPreferencesError('')
-    setPreferencesSuccess('')
     setPreferencesLoading(true)
     
     // Optimistic update
@@ -116,10 +119,9 @@ export default function SettingsPage() {
     const result = await updateCheckboxPosition(position)
 
     if (result.success) {
-      setPreferencesSuccess('Preferences updated!')
-      setTimeout(() => setPreferencesSuccess(''), 3000)
+      toast.success('Checkbox position updated')
     } else {
-      setPreferencesError(result.error || 'Failed to update preferences')
+      toast.error(result.error || 'Failed to update preferences')
       // Revert on error
       setCheckboxPosition(user?.checkbox_position || 'left')
     }
@@ -129,21 +131,16 @@ export default function SettingsPage() {
 
   // Changed: Handle color theme change
   const handleColorThemeChange = async (theme: ColorTheme) => {
-    setPreferencesError('')
-    setPreferencesSuccess('')
     setPreferencesLoading(true)
 
     await setThemePreference(theme)
     
-    setPreferencesSuccess('Theme updated!')
-    setTimeout(() => setPreferencesSuccess(''), 3000)
+    toast.success('Color theme updated')
     setPreferencesLoading(false)
   }
 
   // Changed: Handle style theme change
   const handleStyleThemeChange = async (theme: StyleTheme) => {
-    setPreferencesError('')
-    setPreferencesSuccess('')
     setPreferencesLoading(true)
 
     // Update local theme immediately
@@ -153,10 +150,9 @@ export default function SettingsPage() {
     const result = await updateStyleTheme(theme)
 
     if (result.success) {
-      setPreferencesSuccess('Style theme updated!')
-      setTimeout(() => setPreferencesSuccess(''), 3000)
+      toast.success('Style theme updated')
     } else {
-      setPreferencesError(result.error || 'Failed to update style theme')
+      toast.error(result.error || 'Failed to update style theme')
     }
 
     setPreferencesLoading(false)
@@ -440,19 +436,6 @@ export default function SettingsPage() {
               </div>
             </div>
 
-            {/* Success/Error Messages */}
-            {preferencesSuccess && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
-                <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{preferencesSuccess}</span>
-              </div>
-            )}
-            {preferencesError && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <span className="text-sm">{preferencesError}</span>
-              </div>
-            )}
           </div>
         </section>
 

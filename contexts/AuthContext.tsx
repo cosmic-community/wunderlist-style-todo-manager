@@ -90,6 +90,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fetch('/api/auth/logout', { method: 'POST' })
     } finally {
       setUser(null)
+      // Clear user preferences from localStorage on logout
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('theme')
+        localStorage.removeItem('styleTheme')
+        
+        // Reset theme classes on document to defaults
+        document.documentElement.classList.remove(
+          'theme-ocean', 'theme-forest', 'theme-sunset',
+          'theme-rose', 'theme-lavender', 'theme-peach', 'theme-mint'
+        )
+        document.documentElement.classList.add('theme-default')
+        
+        // Reset to system color preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+        document.documentElement.classList.toggle('dark', prefersDark)
+        document.body.classList.toggle('dark', prefersDark)
+      }
     }
   }
 

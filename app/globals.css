@@ -35,6 +35,20 @@
     --color-accent-hover: 37 99 235; /* blue-600 */
     --color-accent-light: 219 234 254; /* blue-100 */
     --color-accent-dark: 30 64 175; /* blue-800 */
+    
+    /* Toast colors - light mode */
+    --toast-bg: #ffffff;
+    --toast-color: #1f2937;
+    --toast-success: #10b981;
+    --toast-error: #ef4444;
+  }
+
+  .dark {
+    /* Toast colors - dark mode */
+    --toast-bg: #1f2937;
+    --toast-color: #f9fafb;
+    --toast-success: #34d399;
+    --toast-error: #f87171;
   }
 
   .theme-default {

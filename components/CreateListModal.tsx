@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { List } from '@/types'
 import { X } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface CreateListModalProps {
   onClose: () => void
@@ -126,10 +127,14 @@ export default function CreateListModal({
         if (onNavigateToList) {
           onNavigateToList(data.list.slug)
         }
+        // Show success toast
+        toast.success(`List "${data.list.metadata.name}" created`)
       }
     } catch (err) {
       console.error('Error creating list:', err)
-      setError(err instanceof Error ? err.message : 'Failed to create list')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create list'
+      setError(errorMessage)
+      toast.error(errorMessage)
     } finally {
       setIsSubmitting(false)
       onCreatingStateChange?.(false)

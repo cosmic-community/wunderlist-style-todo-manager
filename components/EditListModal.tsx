@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { List } from '@/types'
 import { X, Trash2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface EditListModalProps {
   list: List
@@ -67,19 +68,26 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
     }
     
     try {
-      await fetch(`/api/lists/${list.id}`, {
+      const response = await fetch(`/api/lists/${list.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update list')
+      }
+      
       // Update UI and close modal after successful save
       onOptimisticUpdate(list.id, optimisticUpdates)
       if (onRefresh) {
         onRefresh()
       }
       onClose()
+      toast.success('List updated')
     } catch (error) {
       console.error('Error updating list:', error)
+      toast.error('Failed to update list')
     } finally {
       setIsSubmitting(false)
     }
@@ -89,6 +97,7 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
     if (isDeleting) return
     
     setIsDeleting(true)
+    const listName = list.metadata.name
     
     // Optimistically delete and close immediately
     onOptimisticDelete(list.id)
@@ -96,11 +105,18 @@ export default function EditListModal({ list, onClose, onOptimisticUpdate, onOpt
     
     // Send to server in background
     try {
-      await fetch(`/api/lists/${list.id}`, {
+      const response = await fetch(`/api/lists/${list.id}`, {
         method: 'DELETE'
       })
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete list')
+      }
+      
+      toast.success(`List "${listName}" deleted`)
     } catch (error) {
       console.error('Error deleting list:', error)
+      toast.error('Failed to delete list')
     } finally {
       setIsDeleting(false)
     }
