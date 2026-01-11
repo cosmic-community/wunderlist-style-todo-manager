@@ -13,13 +13,13 @@ export default function SettingsPage() {
   const { user, isLoading: authLoading, isAuthenticated, refreshUser, updateCheckboxPosition, updateStyleTheme } = useAuth()
   const { userThemePreference, setThemePreference, styleTheme, setStyleTheme } = useTheme()
   const router = useRouter()
-  
+
   // Profile form state
   const [displayName, setDisplayName] = useState('')
   const [profileLoading, setProfileLoading] = useState(false)
   const [profileSuccess, setProfileSuccess] = useState('')
   const [profileError, setProfileError] = useState('')
-  
+
   // Password reset state
   const [resetLoading, setResetLoading] = useState(false)
   const [resetSuccess, setResetSuccess] = useState('')
@@ -79,7 +79,7 @@ export default function SettingsPage() {
   // Changed: Replaced password change form with password reset email function
   const handlePasswordReset = async () => {
     if (!user?.email) return
-    
+
     setResetError('')
     setResetSuccess('')
     setResetLoading(true)
@@ -112,7 +112,7 @@ export default function SettingsPage() {
   // Changed: Handle checkbox position change
   const handleCheckboxPositionChange = async (position: CheckboxPosition) => {
     setPreferencesLoading(true)
-    
+
     // Optimistic update
     setCheckboxPosition(position)
 
@@ -134,7 +134,7 @@ export default function SettingsPage() {
     setPreferencesLoading(true)
 
     await setThemePreference(theme)
-    
+
     toast.success('Color theme updated')
     setPreferencesLoading(false)
   }
@@ -145,7 +145,7 @@ export default function SettingsPage() {
 
     // Update local theme immediately
     setStyleTheme(theme)
-    
+
     // Persist to server
     const result = await updateStyleTheme(theme)
 
@@ -188,7 +188,7 @@ export default function SettingsPage() {
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center gap-4">
-          <Link 
+          <Link
             href="/"
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
           >
@@ -304,47 +304,41 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => handleCheckboxPositionChange('left')}
                   disabled={preferencesLoading}
-                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${
-                    checkboxPosition === 'left'
+                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 ${checkboxPosition === 'left'
                       ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
+                    }`}
                 >
-                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${
-                    checkboxPosition === 'left' ? 'border-accent bg-accent' : 'border-gray-300 dark:border-gray-600'
-                  }`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${checkboxPosition === 'left' ? 'border-accent bg-accent' : 'border-gray-300 dark:border-gray-600'
+                    }`}>
                     {checkboxPosition === 'left' && (
                       <svg className="w-full h-full text-white p-0.5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
                         <path d="M5 13l4 4L19 7"></path>
                       </svg>
                     )}
                   </div>
-                  <span className={`text-sm font-medium ${
-                    checkboxPosition === 'left' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
-                  }`}>Left Side</span>
+                  <span className={`text-sm font-medium ${checkboxPosition === 'left' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
+                    }`}>Left Side</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleCheckboxPositionChange('right')}
                   disabled={preferencesLoading}
-                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 flex-row-reverse ${
-                    checkboxPosition === 'right'
+                  className={`p-4 rounded-lg border-2 transition-all flex items-center gap-3 flex-row-reverse ${checkboxPosition === 'right'
                       ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
+                    }`}
                 >
-                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${
-                    checkboxPosition === 'right' ? 'border-accent bg-accent' : 'border-gray-300 dark:border-gray-600'
-                  }`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex-shrink-0 ${checkboxPosition === 'right' ? 'border-accent bg-accent' : 'border-gray-300 dark:border-gray-600'
+                    }`}>
                     {checkboxPosition === 'right' && (
                       <svg className="w-full h-full text-white p-0.5" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" stroke="currentColor">
                         <path d="M5 13l4 4L19 7"></path>
                       </svg>
                     )}
                   </div>
-                  <span className={`text-sm font-medium ${
-                    checkboxPosition === 'right' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
-                  }`}>Right Side</span>
+                  <span className={`text-sm font-medium ${checkboxPosition === 'right' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
+                    }`}>Right Side</span>
                 </button>
               </div>
             </div>
@@ -362,46 +356,40 @@ export default function SettingsPage() {
                   type="button"
                   onClick={() => handleColorThemeChange('light')}
                   disabled={preferencesLoading}
-                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
-                    userThemePreference === 'light'
+                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${userThemePreference === 'light'
                       ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
+                    }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-white border-2 border-gray-200 shadow-sm" />
-                  <span className={`text-xs font-medium ${
-                    userThemePreference === 'light' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
-                  }`}>Light</span>
+                  <span className={`text-xs font-medium ${userThemePreference === 'light' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
+                    }`}>Light</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleColorThemeChange('dark')}
                   disabled={preferencesLoading}
-                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
-                    userThemePreference === 'dark'
+                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${userThemePreference === 'dark'
                       ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
+                    }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gray-900 border-2 border-gray-700" />
-                  <span className={`text-xs font-medium ${
-                    userThemePreference === 'dark' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
-                  }`}>Dark</span>
+                  <span className={`text-xs font-medium ${userThemePreference === 'dark' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
+                    }`}>Dark</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => handleColorThemeChange('system')}
                   disabled={preferencesLoading}
-                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
-                    userThemePreference === 'system'
+                  className={`p-4 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${userThemePreference === 'system'
                       ? 'border-accent bg-accent-light dark:bg-accent/20'
                       : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                  }`}
+                    }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white to-gray-900 border-2 border-gray-300" />
-                  <span className={`text-xs font-medium ${
-                    userThemePreference === 'system' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
-                  }`}>System</span>
+                  <span className={`text-xs font-medium ${userThemePreference === 'system' ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
+                    }`}>System</span>
                 </button>
               </div>
             </div>
@@ -421,16 +409,14 @@ export default function SettingsPage() {
                     type="button"
                     onClick={() => handleStyleThemeChange(theme.key)}
                     disabled={preferencesLoading}
-                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${
-                      styleTheme === theme.key
+                    className={`p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-2 ${styleTheme === theme.key
                         ? 'border-accent bg-accent-light dark:bg-accent/20'
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
+                      }`}
                   >
                     <div className={`w-6 h-6 rounded-full ${theme.color} dark:${theme.darkColor} shadow-sm`} />
-                    <span className={`text-xs font-medium ${
-                      styleTheme === theme.key ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
-                    }`}>{theme.label}</span>
+                    <span className={`text-xs font-medium ${styleTheme === theme.key ? 'text-accent-dark dark:text-accent' : 'text-gray-700 dark:text-gray-300'
+                      }`}>{theme.label}</span>
                   </button>
                 ))}
               </div>
@@ -453,7 +439,7 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Click the button below to receive a password reset link at <strong className="text-gray-900 dark:text-white">{user.email}</strong>. 
+              Click the button below to receive a password reset link at <strong className="text-gray-900 dark:text-white">{user.email}</strong>.
               You&apos;ll be able to create a new password from the link in the email.
             </p>
 

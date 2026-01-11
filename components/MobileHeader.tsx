@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { List } from '@/types'
 import { CheckSquare, Menu, X, MoreHorizontal, Pencil, Trash2, UserPlus, Inbox, LogIn, UserPlus as SignupIcon, Loader2, Plus } from 'lucide-react'
+import toast from 'react-hot-toast'
 import CreateListModal from './CreateListModal'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
@@ -27,16 +28,16 @@ interface MobileHeaderProps {
   onCreatingStateChange?: (isCreating: boolean) => void
 }
 
-export default function MobileHeader({ 
-  lists, 
-  currentListSlug, 
-  isLoading = false, 
+export default function MobileHeader({
+  lists,
+  currentListSlug,
+  isLoading = false,
   syncingListSlugs = new Set(),
   isMenuOpen = false,
   onMenuClose,
-  onListCreated, 
-  onListReplaced, 
-  onListUpdated, 
+  onListCreated,
+  onListReplaced,
+  onListUpdated,
   onListDeleted,
   onListClick,
   onRefresh,
@@ -122,8 +123,13 @@ export default function MobileHeader({
     e.preventDefault()
     e.stopPropagation()
     setOpenMenuId(null)
+
+    const listToDelete = lists.find(l => l.id === listId)
+    const listName = listToDelete?.metadata.name || listToDelete?.title || 'List'
+
     handleOptimisticDelete(listId)
-    
+    toast.success(`"${listName}" deleted`)
+
     fetch(`/api/lists/${listId}`, {
       method: 'DELETE'
     }).catch(error => {
@@ -133,13 +139,13 @@ export default function MobileHeader({
 
   const handleListNavigation = (e: React.MouseEvent, slug?: string, isSyncing?: boolean) => {
     e.preventDefault()
-    
+
     if (isSyncing) {
       return
     }
-    
+
     closeMenu()
-    
+
     if (onListClick) {
       onListClick(slug)
     }
@@ -202,11 +208,10 @@ export default function MobileHeader({
             <nav className="space-y-2">
               <button
                 onClick={(e) => handleListNavigation(e, undefined)}
-                className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${
-                  !currentListSlug
+                className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${!currentListSlug
                     ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                }`}
+                  }`}
               >
                 <Inbox className="w-6 h-6" />
                 <span className="font-medium text-lg">All Tasks</span>
@@ -228,19 +233,18 @@ export default function MobileHeader({
                       Lists
                     </h3>
                   </div>
-                  
+
                   {lists.map((list) => {
                     const isSyncing = syncingListSlugs.has(list.slug)
-                    
+
                     return (
                       <div key={list.id} className="relative group">
-                        <div className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${
-                          isSyncing
+                        <div className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${isSyncing
                             ? 'opacity-60 bg-gray-50 dark:bg-gray-800/50'
                             : currentListSlug === list.slug
                               ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
                               : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                        }`}>
+                          }`}>
                           <button
                             onClick={(e) => handleListNavigation(e, list.slug, isSyncing)}
                             disabled={isSyncing}
@@ -249,7 +253,7 @@ export default function MobileHeader({
                             {isSyncing ? (
                               <Loader2 className="w-6 h-6 flex-shrink-0 animate-spin text-gray-400" />
                             ) : (
-                              <div 
+                              <div
                                 className="w-6 h-6 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
                               />
@@ -258,13 +262,13 @@ export default function MobileHeader({
                               {list.metadata.name || list.title}
                             </span>
                           </button>
-                          
+
                           {isSyncing && (
                             <span className="text-sm text-gray-400 dark:text-gray-500 flex-shrink-0">
                               Saving...
                             </span>
                           )}
-                          
+
                           {!isSyncing && (
                             <button
                               onClick={(e) => toggleMenu(e, list.id)}
@@ -275,9 +279,9 @@ export default function MobileHeader({
                             </button>
                           )}
                         </div>
-                        
+
                         {openMenuId === list.id && !isSyncing && (
-                          <div 
+                          <div
                             ref={menuRef}
                             className="absolute right-4 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
                           >

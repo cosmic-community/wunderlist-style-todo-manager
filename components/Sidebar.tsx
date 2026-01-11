@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { List } from '@/types'
 import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2, Plus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
+import toast from 'react-hot-toast'
 import CreateListModal from './CreateListModal'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
@@ -96,7 +97,12 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     e.preventDefault()
     e.stopPropagation()
     setOpenMenuId(null)
+
+    const listToDelete = lists.find(l => l.id === listId)
+    const listName = listToDelete?.metadata.name || listToDelete?.title || 'List'
+
     handleOptimisticDelete(listId)
+    toast.success(`"${listName}" deleted`)
 
     fetch(`/api/lists/${listId}`, {
       method: 'DELETE'
