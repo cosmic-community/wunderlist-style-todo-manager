@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { List } from '@/types'
 import { CheckSquare, Menu, X, MoreHorizontal, Pencil, Trash2, UserPlus, Inbox, LogIn, UserPlus as SignupIcon, Loader2, Plus } from 'lucide-react'
-// Changed: Removed Settings import as we're removing the settings button from mobile header
 import CreateListModal from './CreateListModal'
 import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
@@ -16,15 +15,16 @@ interface MobileHeaderProps {
   lists: List[]
   currentListSlug?: string
   isLoading?: boolean
-  // Changed: Track lists that are still syncing (have temporary IDs)
   syncingListSlugs?: Set<string>
+  // Changed: Menu state is now controlled by parent
+  isMenuOpen?: boolean
+  onMenuClose?: () => void
   onListCreated?: (list: List) => void
   onListReplaced?: (tempId: string, realList: List) => void
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
   onListDeleted?: (listId: string) => void
   onListClick?: (slug?: string) => void
   onRefresh?: () => void
-  // Changed: Add callback for creating state to show loading in main area
   onCreatingStateChange?: (isCreating: boolean) => void
 }
 
@@ -33,6 +33,8 @@ export default function MobileHeader({
   currentListSlug, 
   isLoading = false, 
   syncingListSlugs = new Set(),
+  isMenuOpen = false,
+  onMenuClose,
   onListCreated, 
   onListReplaced, 
   onListUpdated, 
@@ -41,7 +43,12 @@ export default function MobileHeader({
   onRefresh,
   onCreatingStateChange
 }: MobileHeaderProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  // Changed: Helper to close menu
+  const closeMenu = () => {
+    if (onMenuClose) {
+      onMenuClose()
+    }
+  }
   const [editingList, setEditingList] = useState<List | null>(null)
   const [invitingList, setInvitingList] = useState<List | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -63,7 +70,7 @@ export default function MobileHeader({
 
   // Close mobile menu when route changes
   useEffect(() => {
-    setIsMenuOpen(false)
+    closeMenu()
   }, [currentListSlug])
 
   const handleListCreated = (list: List) => {
@@ -107,7 +114,6 @@ export default function MobileHeader({
     e.preventDefault()
     e.stopPropagation()
     setOpenMenuId(null)
-    // Changed: Only allow invite if authenticated
     if (isAuthenticated) {
       setInvitingList(list)
     }
@@ -119,7 +125,6 @@ export default function MobileHeader({
     setOpenMenuId(null)
     handleOptimisticDelete(listId)
     
-    // Send to server in background
     fetch(`/api/lists/${listId}`, {
       method: 'DELETE'
     }).catch(error => {
@@ -127,31 +132,27 @@ export default function MobileHeader({
     })
   }
 
-  // Changed: Handle list navigation without page refresh
   const handleListNavigation = (e: React.MouseEvent, slug?: string, isSyncing?: boolean) => {
     e.preventDefault()
     
-    // Changed: Don't allow navigation to syncing lists
     if (isSyncing) {
       return
     }
     
-    setIsMenuOpen(false)
+    closeMenu()
     
     if (onListClick) {
       onListClick(slug)
     }
   }
 
-  // Changed: Handle navigation to newly created list
   const handleNavigateToList = (slug: string) => {
-    setIsMenuOpen(false)
+    closeMenu()
     if (onListClick) {
       onListClick(slug)
     }
   }
 
-  // Changed: Handle creating state change
   const handleCreatingStateChange = (isCreating: boolean) => {
     if (onCreatingStateChange) {
       onCreatingStateChange(isCreating)
@@ -160,229 +161,184 @@ export default function MobileHeader({
 
   return (
     <>
-      {/* Changed: Mobile Header - now uses sticky positioning via parent wrapper for better iOS compatibility */}
-      <header className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 safe-area-inset-top">
-        <div className="flex items-center justify-between px-4 py-4">
-          <button
-            onClick={() => setIsMenuOpen(true)}
-            className="p-2.5 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg"
-            aria-label="Open menu"
-          >
-            {/* Changed: Increased icon size from w-6 h-6 to w-7 h-7 */}
-            <Menu className="w-7 h-7" />
-          </button>
-          
-          <div className="flex items-center gap-2">
-            {/* Changed: Increased icon size from w-5 h-5 to w-6 h-6 */}
-            <CheckSquare className="w-6 h-6 text-accent" />
-            {/* Changed: Always show "Cosmic Todo" as the mobile header title */}
-            <span className="font-semibold text-lg text-gray-900 dark:text-white">
-              Cosmic Todo
-            </span>
-          </div>
-          
-          {/* Changed: Removed settings button - now just an empty placeholder to maintain layout balance */}
-          <div className="w-12 h-12" />
-        </div>
-      </header>
 
-      {/* Mobile Slide-out Menu */}
+      {/* Changed: Full-page menu takeover */}
       {isMenuOpen && (
-        <>
-          {/* Backdrop */}
-          <div 
-            className="md:hidden fixed inset-0 bg-black/50 z-50"
-            onClick={() => setIsMenuOpen(false)}
-          />
-          
-          {/* Changed: Menu Panel - increased sizes throughout */}
-          <div className="md:hidden fixed inset-y-0 left-0 w-80 bg-white dark:bg-gray-900 z-50 shadow-xl safe-area-inset-top safe-area-inset-bottom overflow-y-auto">
-            <div className="p-5">
-              {/* Changed: Header - increased sizes */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  {/* Changed: Increased icon from w-6 h-6 to w-7 h-7 */}
-                  <CheckSquare className="w-7 h-7 text-accent" />
-                  {/* Changed: Increased title from text-xl to text-2xl */}
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
-                </div>
-                <button
-                  onClick={() => setIsMenuOpen(false)}
-                  className="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  aria-label="Close menu"
-                >
-                  {/* Changed: Increased icon from w-5 h-5 to w-6 h-6 */}
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              {/* Show user menu if authenticated, auth buttons if not */}
-              {isAuthenticated ? (
-                <div className="mb-4 -mx-3">
-                  <UserMenu />
-                </div>
-              ) : (
-                <div className="mb-4 space-y-2">
-                  <Link
-                    href="/login"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium text-base transition-colors"
-                  >
-                    <LogIn className="w-5 h-5" />
-                    Log In
-                  </Link>
-                  <Link
-                    href="/signup"
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center justify-center gap-2 w-full px-4 py-3 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium text-base transition-colors"
-                  >
-                    <SignupIcon className="w-5 h-5" />
-                    Sign Up
-                  </Link>
-                </div>
-              )}
-
-              {/* Changed: Navigation - increased sizes */}
-              <nav className="space-y-1">
-                <button
-                  onClick={(e) => handleListNavigation(e, undefined)}
-                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                    !currentListSlug
-                      ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
-                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                >
-                  {/* Changed: Increased icon from w-5 h-5 to w-6 h-6 */}
-                  <Inbox className="w-6 h-6" />
-                  {/* Changed: Increased text size */}
-                  <span className="font-medium text-base">All Tasks</span>
-                </button>
-
-                {isLoading ? (
-                  <div className="pt-4">
-                    <div className="pb-2 px-3">
-                      {/* Changed: Increased section header text */}
-                      <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Lists
-                      </h3>
-                    </div>
-                    <SkeletonLoader variant="list" count={3} />
-                  </div>
-                ) : lists.length > 0 && (
-                  <>
-                    <div className="pt-4 pb-2 px-3">
-                      {/* Changed: Increased section header text */}
-                      <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                        Lists
-                      </h3>
-                    </div>
-                    
-                    {lists.map((list) => {
-                      // Changed: Check if this list is still syncing (has temp ID)
-                      const isSyncing = syncingListSlugs.has(list.slug)
-                      
-                      return (
-                        <div key={list.id} className="relative group">
-                          {/* Changed: Use div wrapper with flex to separate clickable areas for touch devices - increased padding */}
-                          <div className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
-                            isSyncing
-                              ? 'opacity-60 bg-gray-50 dark:bg-gray-800/50'
-                              : currentListSlug === list.slug
-                                ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
-                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
-                          }`}>
-                            {/* Changed: Main clickable area for navigation - takes most of the space */}
-                            <button
-                              onClick={(e) => handleListNavigation(e, list.slug, isSyncing)}
-                              disabled={isSyncing}
-                              className={`flex-1 flex items-center gap-3 text-left ${isSyncing ? 'cursor-not-allowed' : ''}`}
-                            >
-                              {/* Changed: Show spinner if syncing, otherwise show color dot - increased size */}
-                              {isSyncing ? (
-                                <Loader2 className="w-5 h-5 flex-shrink-0 animate-spin text-gray-400" />
-                              ) : (
-                                <div 
-                                  className="w-5 h-5 rounded-full flex-shrink-0"
-                                  style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
-                                />
-                              )}
-                              {/* Changed: Use metadata.name instead of title for list name display - increased text size */}
-                              <span className={`font-medium text-base flex-1 truncate ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
-                              {list.metadata.name || list.title}
-                              </span>
-                            </button>
-                            
-                            {/* Changed: Show "Saving..." text if syncing */}
-                            {isSyncing && (
-                              <span className="text-sm text-gray-400 dark:text-gray-500 flex-shrink-0">
-                                Saving...
-                              </span>
-                            )}
-                            
-                            {/* Changed: More options button - always visible on mobile (removed opacity-0 group-hover) to fix double-tap issue - increased size */}
-                            {!isSyncing && (
-                              <button
-                                onClick={(e) => toggleMenu(e, list.id)}
-                                className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
-                                aria-label="List options"
-                              >
-                                <MoreHorizontal className="w-5 h-5" />
-                              </button>
-                            )}
-                          </div>
-                          
-                          {/* Changed: Dropdown menu - don't show for syncing lists - increased sizes */}
-                          {openMenuId === list.id && !isSyncing && (
-                            <div 
-                              ref={menuRef}
-                              className="absolute right-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
-                            >
-                              {/* Changed: Only show invite if authenticated - increased padding and text */}
-                              {isAuthenticated && (
-                                <button
-                                  onClick={(e) => handleInviteClick(e, list)}
-                                  className="w-full flex items-center gap-2 px-4 py-2.5 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                                >
-                                  <UserPlus className="w-5 h-5" />
-                                  Invite
-                                </button>
-                              )}
-                              <button
-                                onClick={(e) => handleEditClick(e, list)}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-base text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                              >
-                                <Pencil className="w-5 h-5" />
-                                Edit
-                              </button>
-                              <button
-                                onClick={(e) => handleDeleteClick(e, list.id)}
-                                className="w-full flex items-center gap-2 px-4 py-2.5 text-base text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                              >
-                                <Trash2 className="w-5 h-5" />
-                                Delete
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </>
-                )}
-
-                {/* Changed: Create list button that opens modal */}
-                <div className="pt-4">
-                  <button
-                    onClick={() => setShowCreateModal(true)}
-                    className="w-full flex items-center gap-3 px-3 py-3 text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                  >
-                    <Plus className="w-6 h-6" />
-                    <span className="font-medium">Create List</span>
-                  </button>
-                </div>
-              </nav>
+        <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-gray-900 safe-area-inset-top safe-area-inset-bottom overflow-y-auto">
+          {/* Header */}
+          <div className="p-5 border-b border-gray-200 dark:border-gray-800">
+            <div className="flex items-center gap-3">
+              <CheckSquare className="w-8 h-8 text-accent" />
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
             </div>
           </div>
-        </>
+
+          {/* Content area with scroll */}
+          <div className="p-5 pb-32">
+            {/* User menu or auth buttons */}
+            {isAuthenticated ? (
+              <div className="mb-6 -mx-3">
+                <UserMenu />
+              </div>
+            ) : (
+              <div className="mb-6 space-y-3">
+                <Link
+                  href="/login"
+                  onClick={() => closeMenu()}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-4 bg-accent hover:bg-accent-hover text-white rounded-xl font-medium text-lg transition-colors"
+                >
+                  <LogIn className="w-5 h-5" />
+                  Log In
+                </Link>
+                <Link
+                  href="/signup"
+                  onClick={() => closeMenu()}
+                  className="flex items-center justify-center gap-2 w-full px-4 py-4 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium text-lg transition-colors"
+                >
+                  <SignupIcon className="w-5 h-5" />
+                  Sign Up
+                </Link>
+              </div>
+            )}
+
+            {/* Navigation */}
+            <nav className="space-y-2">
+              <button
+                onClick={(e) => handleListNavigation(e, undefined)}
+                className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${
+                  !currentListSlug
+                    ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                <Inbox className="w-6 h-6" />
+                <span className="font-medium text-lg">All Tasks</span>
+              </button>
+
+              {isLoading ? (
+                <div className="pt-6">
+                  <div className="pb-3 px-4">
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Lists
+                    </h3>
+                  </div>
+                  <SkeletonLoader variant="list" count={3} />
+                </div>
+              ) : lists.length > 0 && (
+                <>
+                  <div className="pt-6 pb-3 px-4">
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Lists
+                    </h3>
+                  </div>
+                  
+                  {lists.map((list) => {
+                    const isSyncing = syncingListSlugs.has(list.slug)
+                    
+                    return (
+                      <div key={list.id} className="relative group">
+                        <div className={`w-full flex items-center gap-4 px-4 py-4 rounded-xl transition-colors ${
+                          isSyncing
+                            ? 'opacity-60 bg-gray-50 dark:bg-gray-800/50'
+                            : currentListSlug === list.slug
+                              ? 'bg-accent-light dark:bg-accent/20 text-accent dark:text-accent'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800'
+                        }`}>
+                          <button
+                            onClick={(e) => handleListNavigation(e, list.slug, isSyncing)}
+                            disabled={isSyncing}
+                            className={`flex-1 flex items-center gap-4 text-left ${isSyncing ? 'cursor-not-allowed' : ''}`}
+                          >
+                            {isSyncing ? (
+                              <Loader2 className="w-6 h-6 flex-shrink-0 animate-spin text-gray-400" />
+                            ) : (
+                              <div 
+                                className="w-6 h-6 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
+                              />
+                            )}
+                            <span className={`font-medium text-lg flex-1 truncate ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
+                              {list.metadata.name || list.title}
+                            </span>
+                          </button>
+                          
+                          {isSyncing && (
+                            <span className="text-sm text-gray-400 dark:text-gray-500 flex-shrink-0">
+                              Saving...
+                            </span>
+                          )}
+                          
+                          {!isSyncing && (
+                            <button
+                              onClick={(e) => toggleMenu(e, list.id)}
+                              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
+                              aria-label="List options"
+                            >
+                              <MoreHorizontal className="w-6 h-6" />
+                            </button>
+                          )}
+                        </div>
+                        
+                        {openMenuId === list.id && !isSyncing && (
+                          <div 
+                            ref={menuRef}
+                            className="absolute right-4 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
+                          >
+                            {isAuthenticated && (
+                              <button
+                                onClick={(e) => handleInviteClick(e, list)}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              >
+                                <UserPlus className="w-5 h-5" />
+                                Invite
+                              </button>
+                            )}
+                            <button
+                              onClick={(e) => handleEditClick(e, list)}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <Pencil className="w-5 h-5" />
+                              Edit
+                            </button>
+                            <button
+                              onClick={(e) => handleDeleteClick(e, list.id)}
+                              className="w-full flex items-center gap-3 px-4 py-3 text-lg text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </>
+              )}
+
+              {/* Create list button */}
+              <div className="pt-4">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="w-full flex items-center gap-4 px-4 py-4 text-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                >
+                  <Plus className="w-6 h-6" />
+                  <span className="font-medium">Create List</span>
+                </button>
+              </div>
+            </nav>
+          </div>
+
+          {/* Changed: Close button fixed at bottom right for easy thumb access */}
+          <div className="fixed bottom-6 right-4 safe-area-inset-bottom">
+            <button
+              onClick={() => closeMenu()}
+              className="w-14 h-14 bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full shadow-lg flex items-center justify-center transition-all active:scale-95"
+              aria-label="Close menu"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Create List Modal */}
@@ -407,7 +363,7 @@ export default function MobileHeader({
         />
       )}
 
-      {/* Changed: Only show invite modal if authenticated */}
+      {/* Invite Modal */}
       {invitingList && isAuthenticated && (
         <InviteModal
           listId={invitingList.id}

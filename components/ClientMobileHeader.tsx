@@ -10,11 +10,22 @@ export interface ClientMobileHeaderProps {
   onListChange?: (slug?: string) => void
   onCreatingStateChange?: Dispatch<SetStateAction<boolean>>
   onListRefresh?: () => void
+  // Changed: Callback to register the menu open function
+  onMenuOpenRegister?: (openFn: () => void) => void
 }
 
-export default function ClientMobileHeader({ currentListSlug, onListChange, onCreatingStateChange, onListRefresh }: ClientMobileHeaderProps) {
+export default function ClientMobileHeader({ currentListSlug, onListChange, onCreatingStateChange, onListRefresh, onMenuOpenRegister }: ClientMobileHeaderProps) {
   // Changed: Initialize lists from cache to prevent refetch on navigation
   const [lists, setLists] = useState<List[]>(getCachedLists() || [])
+  // Changed: Track menu open state here so we can expose open function
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  
+  // Changed: Register the menu open function with parent
+  useEffect(() => {
+    if (onMenuOpenRegister) {
+      onMenuOpenRegister(() => setIsMenuOpen(true))
+    }
+  }, [onMenuOpenRegister])
   // Changed: Only show loading if we don't have cached data
   const [isLoading, setIsLoading] = useState(!hasCachedLists())
   // Changed: Track lists that are still syncing (have temporary IDs)
@@ -186,6 +197,8 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
       currentListSlug={currentListSlug} 
       isLoading={isLoading}
       syncingListSlugs={syncingListSlugs}
+      isMenuOpen={isMenuOpen}
+      onMenuClose={() => setIsMenuOpen(false)}
       onListCreated={handleListCreated}
       onListReplaced={handleListReplaced}
       onListUpdated={handleListUpdated}

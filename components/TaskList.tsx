@@ -6,7 +6,7 @@ import { Task, List } from '@/types'
 import TaskCard from '@/components/TaskCard'
 import AddTaskForm from '@/components/AddTaskForm'
 import EmptyState from '@/components/EmptyState'
-import { ChevronRight } from 'lucide-react'
+import { ChevronRight, Menu } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface TaskListProps {
@@ -14,6 +14,7 @@ interface TaskListProps {
   lists: List[]
   listSlug?: string
   onScrollToTop?: () => void
+  onOpenMenu?: () => void
 }
 
 // Track pending state changes for a task
@@ -22,7 +23,7 @@ interface PendingTaskState {
   // Add other fields here as needed for other optimistic updates
 }
 
-export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop }: TaskListProps) {
+export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop, onOpenMenu }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const mountedRef = useRef(true)
@@ -344,13 +345,27 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop 
             </div>
           </div>
         )}
-        <div className="bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 p-5 md:p-4">
-          <div className="max-w-2xl mx-auto">
-            <AddTaskForm
-              lists={lists}
-              listSlug={listSlug}
-              onOptimisticAdd={handleOptimisticAdd}
-            />
+        <div className="bg-gray-50 dark:bg-black border-t border-gray-200 dark:border-gray-800 p-5 md:p-4 safe-area-inset-bottom">
+          <div className="max-w-2xl mx-auto flex items-center gap-3">
+            {/* Add Task Form - takes available space */}
+            <div className="flex-1">
+              <AddTaskForm
+                lists={lists}
+                listSlug={listSlug}
+                onOptimisticAdd={handleOptimisticAdd}
+              />
+            </div>
+
+            {/* Changed: Menu button - mobile only, secondary style with border */}
+            {onOpenMenu && (
+              <button
+                onClick={onOpenMenu}
+                className="md:hidden flex-shrink-0 p-3 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                aria-label="Open menu"
+              >
+                <Menu className="w-6 h-6" />
+              </button>
+            )}
           </div>
         </div>
       </div>
