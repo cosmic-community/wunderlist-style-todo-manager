@@ -1,8 +1,9 @@
 // app/api/lists/[id]/route.ts
 import { NextResponse } from 'next/server'
 import { cosmic, getListById } from '@/lib/cosmic'
+import { getSession } from '@/lib/auth'
 
-// Changed: Removed authentication and ownership checks to allow anyone to edit public lists
+// Changed: Added authentication and ownership checks for list editing
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -19,7 +20,31 @@ export async function PATCH(
       )
     }
     
-    // Changed: Allow anyone to edit public lists - no authentication or ownership check required
+    // Changed: Check if list has an owner - if so, only owner can edit
+    const ownerId = typeof list.metadata.owner === 'string' 
+      ? list.metadata.owner 
+      : list.metadata.owner?.id
+    
+    if (ownerId) {
+      // List has an owner - check if current user is the owner
+      const session = await getSession()
+      
+      if (!session) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        )
+      }
+      
+      if (session.user.id !== ownerId) {
+        return NextResponse.json(
+          { error: 'Only the list owner can edit this list' },
+          { status: 403 }
+        )
+      }
+    }
+    // If list has no owner (demo list), allow anyone to edit
+    
     const data = await request.json()
     
     const updateData: Record<string, unknown> = {}
@@ -51,7 +76,7 @@ export async function PATCH(
   }
 }
 
-// Changed: Removed authentication and ownership checks to allow anyone to delete public lists
+// Changed: Added authentication and ownership checks for list deletion
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -68,7 +93,31 @@ export async function DELETE(
       )
     }
     
-    // Changed: Allow anyone to delete public lists - no authentication or ownership check required
+    // Changed: Check if list has an owner - if so, only owner can delete
+    const ownerId = typeof list.metadata.owner === 'string' 
+      ? list.metadata.owner 
+      : list.metadata.owner?.id
+    
+    if (ownerId) {
+      // List has an owner - check if current user is the owner
+      const session = await getSession()
+      
+      if (!session) {
+        return NextResponse.json(
+          { error: 'Authentication required' },
+          { status: 401 }
+        )
+      }
+      
+      if (session.user.id !== ownerId) {
+        return NextResponse.json(
+          { error: 'Only the list owner can delete this list' },
+          { status: 403 }
+        )
+      }
+    }
+    // If list has no owner (demo list), allow anyone to delete
+    
     await cosmic.objects.deleteOne(id)
     
     return NextResponse.json({ success: true })

@@ -1,8 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { List } from '@/types'
-import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2, Plus } from 'lucide-react'
+import { List, User } from '@/types'
+import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2, Plus, Users, ChevronDown } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import CreateListModal from './CreateListModal'
@@ -31,8 +31,11 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
   const [invitingList, setInvitingList] = useState<List | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  // Changed: Added state for shared users dropdown
+  const [openSharedDropdownId, setOpenSharedDropdownId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const { isAuthenticated } = useAuth()
+  const sharedDropdownRef = useRef<HTMLDivElement>(null)
+  const { isAuthenticated, user } = useAuth()
 
   const bucketSlug = process.env.NEXT_PUBLIC_COSMIC_BUCKET_SLUG || 'cosmic-todo'
 
@@ -40,6 +43,9 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setOpenMenuId(null)
+      }
+      if (sharedDropdownRef.current && !sharedDropdownRef.current.contains(event.target as Node)) {
+        setOpenSharedDropdownId(null)
       }
     }
 
@@ -75,6 +81,13 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     e.preventDefault()
     e.stopPropagation()
     setOpenMenuId(openMenuId === listId ? null : listId)
+  }
+
+  // Changed: Added toggle for shared users dropdown
+  const toggleSharedDropdown = (e: React.MouseEvent, listId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setOpenSharedDropdownId(openSharedDropdownId === listId ? null : listId)
   }
 
   const handleEditClick = (e: React.MouseEvent, list: List) => {
@@ -139,6 +152,26 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     if (onListClick) {
       onListClick(undefined)
     }
+  }
+
+  // Changed: Helper function to check if current user is the owner of a list
+  const isListOwner = (list: List): boolean => {
+    if (!user) return false
+    const ownerId = typeof list.metadata.owner === 'string' 
+      ? list.metadata.owner 
+      : list.metadata.owner?.id
+    return ownerId === user.id
+  }
+
+  // Changed: Helper function to get shared users as User objects
+  const getSharedUsers = (list: List): User[] => {
+    const sharedWith = list.metadata.shared_with || []
+    return sharedWith.filter((u): u is User => typeof u === 'object' && u !== null && 'id' in u)
+  }
+
+  // Changed: Helper function to get display name for a user
+  const getUserDisplayName = (userObj: User): string => {
+    return userObj.metadata?.display_name || userObj.title || 'Unknown User'
   }
 
   return (
@@ -210,6 +243,9 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
 
                 {lists.map((list) => {
                   const isSyncing = syncingListSlugs.has(list.slug)
+                  const sharedUsers = getSharedUsers(list)
+                  const hasSharedUsers = sharedUsers.length > 0
+                  const isOwner = isListOwner(list)
 
                   return (
                     <div key={list.id} className="relative group">
@@ -238,7 +274,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                             style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
                           />
                         )}
-                        <span className={`font-medium flex-1 truncate text-left pr-6 ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
+                        <span className={`font-medium flex-1 truncate text-left ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
                           {list.metadata.name || list.title}
                         </span>
 
@@ -246,6 +282,41 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                           <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
                             Saving...
                           </span>
+                        )}
+
+                        {/* Changed: Shared users indicator with dropdown */}
+                        {!isSyncing && hasSharedUsers && (
+                          <div className="relative" ref={openSharedDropdownId === list.id ? sharedDropdownRef : null}>
+                            <button
+                              onClick={(e) => toggleSharedDropdown(e, list.id)}
+                              className="flex items-center gap-1 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded transition-colors"
+                              aria-label={`Shared with ${sharedUsers.length} user${sharedUsers.length > 1 ? 's' : ''}`}
+                            >
+                              <Users className="w-3 h-3" />
+                              <span>{sharedUsers.length}</span>
+                              <ChevronDown className="w-3 h-3" />
+                            </button>
+
+                            {/* Shared users dropdown */}
+                            {openSharedDropdownId === list.id && (
+                              <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                                <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
+                                  Shared with
+                                </div>
+                                {sharedUsers.map((sharedUser) => (
+                                  <div
+                                    key={sharedUser.id}
+                                    className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"
+                                  >
+                                    <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent">
+                                      {getUserDisplayName(sharedUser).charAt(0).toUpperCase()}
+                                    </div>
+                                    <span className="truncate">{getUserDisplayName(sharedUser)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
                         )}
 
                         {/* More options button - hide if syncing */}
@@ -266,7 +337,8 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                           ref={menuRef}
                           className="absolute right-0 top-full mt-1 w-36 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50"
                         >
-                          {isAuthenticated && (
+                          {/* Changed: Only show Invite option if authenticated and user is owner */}
+                          {isAuthenticated && isOwner && (
                             <button
                               onClick={(e) => handleInviteClick(e, list)}
                               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -275,20 +347,32 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                               Invite
                             </button>
                           )}
-                          <button
-                            onClick={(e) => handleEditClick(e, list)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <Pencil className="w-4 h-4" />
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => handleDeleteClick(e, list.id)}
-                            className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                          </button>
+                          {/* Changed: Only show Edit option if user is owner or list has no owner (demo list) */}
+                          {(isOwner || !list.metadata.owner) && (
+                            <button
+                              onClick={(e) => handleEditClick(e, list)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <Pencil className="w-4 h-4" />
+                              Edit
+                            </button>
+                          )}
+                          {/* Changed: Only show Delete option if user is owner or list has no owner (demo list) */}
+                          {(isOwner || !list.metadata.owner) && (
+                            <button
+                              onClick={(e) => handleDeleteClick(e, list.id)}
+                              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                              Delete
+                            </button>
+                          )}
+                          {/* Changed: Show message if user doesn't have permission */}
+                          {!isOwner && list.metadata.owner && (
+                            <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+                              Only the owner can edit
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
