@@ -62,20 +62,21 @@ export default function UserMenu() {
             </p>
           </div>
           
+          {/* Changed: Updated text size to text-base md:text-sm for better mobile visibility */}
           {/* Settings link */}
           <Link
             href="/settings"
-            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="w-full flex items-center gap-3 px-4 py-3 text-base md:text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <Settings className="w-4 h-4" />
+            <Settings className="w-5 h-5 md:w-4 md:h-4" />
             Settings
           </Link>
           
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="w-full flex items-center gap-3 px-4 py-3 text-base md:text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-5 h-5 md:w-4 md:h-4" />
             Sign out
           </button>
         </div>
