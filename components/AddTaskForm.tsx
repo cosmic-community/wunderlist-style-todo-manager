@@ -92,6 +92,7 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Add a Task"
+        autoCapitalize="words"
         className="flex-1 min-w-0 bg-transparent border-none outline-none text-lg md:text-base text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 py-2"
         disabled={isSubmitting}
       />
