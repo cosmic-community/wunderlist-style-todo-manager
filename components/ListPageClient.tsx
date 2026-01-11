@@ -74,6 +74,11 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
     setRefreshKey(prev => prev + 1)
   }, [])
 
+  // Changed: Stable callback for menu open registration to prevent infinite re-renders
+  const handleMenuOpenRegister = useCallback((fn: () => void) => {
+    setOpenMenuFn(() => fn)
+  }, [])
+
   return (
     // Changed: Use h-screen with flex layout and overflow-hidden to prevent excessive scrolling
     <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden">
@@ -92,7 +97,7 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
           currentListSlug={currentListSlug}
           onListChange={handleListChange}
           onListRefresh={handleListRefresh}
-          onMenuOpenRegister={(fn) => setOpenMenuFn(() => fn)}
+          onMenuOpenRegister={handleMenuOpenRegister}
         />
         
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-safe-top">

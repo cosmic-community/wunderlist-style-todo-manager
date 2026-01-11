@@ -19,13 +19,19 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
   const [lists, setLists] = useState<List[]>(getCachedLists() || [])
   // Changed: Track menu open state here so we can expose open function
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  
-  // Changed: Register the menu open function with parent
+
+  // Changed: Stable callback to open the menu
+  const openMenu = useCallback(() => setIsMenuOpen(true), [])
+
+  // Changed: Stable callback to close the menu
+  const closeMenu = useCallback(() => setIsMenuOpen(false), [])
+
+  // Changed: Register the menu open function with parent - use stable callback
   useEffect(() => {
     if (onMenuOpenRegister) {
-      onMenuOpenRegister(() => setIsMenuOpen(true))
+      onMenuOpenRegister(openMenu)
     }
-  }, [onMenuOpenRegister])
+  }, [onMenuOpenRegister, openMenu])
   // Changed: Only show loading if we don't have cached data
   const [isLoading, setIsLoading] = useState(!hasCachedLists())
   // Changed: Track lists that are still syncing (have temporary IDs)
@@ -46,17 +52,17 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
         const filteredLists = (data.lists as List[]).filter(
           list => !deletedListIds.current.has(list.id)
         )
-        
+
         // Changed: Only update lists if they don't have temporary IDs
         // This prevents replacing optimistic updates with fetched data
         setLists(prevLists => {
           // Keep any lists with temporary IDs from optimistic updates
           const tempLists = prevLists.filter(list => list.id.startsWith('temp-'))
-          
+
           // Merge temporary lists with fetched lists, avoiding duplicates
           const fetchedIds = new Set(filteredLists.map(list => list.id))
           const uniqueTempLists = tempLists.filter(list => !fetchedIds.has(list.id))
-          
+
           const newLists = [...filteredLists, ...uniqueTempLists]
           // Changed: Update the shared cache
           setCachedLists(newLists)
@@ -108,7 +114,7 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
           return newSet
         })
       }
-      const newLists = prevLists.map(list => 
+      const newLists = prevLists.map(list =>
         list.id === tempId ? realList : list
       )
       // Changed: Update the shared cache
@@ -120,20 +126,20 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
   const handleListUpdated = (listId: string, updates: Partial<List['metadata']>) => {
     // Optimistically update the list
     setLists(prevLists => {
-      const newLists = prevLists.map(list => 
-        list.id === listId 
-          ? { 
-              ...list, 
-              title: updates.name || list.title,
-              metadata: { ...list.metadata, ...updates } 
-            } 
+      const newLists = prevLists.map(list =>
+        list.id === listId
+          ? {
+            ...list,
+            title: updates.name || list.title,
+            metadata: { ...list.metadata, ...updates }
+          }
           : list
       )
       // Changed: Update the shared cache
       setCachedLists(newLists)
       return newLists
     })
-    
+
     // Changed: Trigger parent refresh when list is updated
     if (onListRefresh) {
       onListRefresh()
@@ -143,10 +149,10 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
   const handleListDeleted = (listId: string) => {
     // Find the list being deleted to check if we need to redirect
     const deletedList = lists.find(l => l.id === listId)
-    
+
     // Add to deleted set to prevent reappearing on fetch
     deletedListIds.current.add(listId)
-    
+
     // Optimistically remove the list
     setLists(prevLists => {
       const newLists = prevLists.filter(list => list.id !== listId)
@@ -154,7 +160,7 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
       setCachedLists(newLists)
       return newLists
     })
-    
+
     // Changed: Also remove from syncing set if present
     if (deletedList) {
       setSyncingListSlugs(prev => {
@@ -163,7 +169,7 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
         return newSet
       })
     }
-    
+
     // If we're currently viewing the deleted list, go back to all tasks
     if (deletedList && deletedList.slug === currentListSlug) {
       if (onListChange) {
@@ -192,13 +198,13 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
   }
 
   return (
-    <MobileHeader 
-      lists={lists} 
-      currentListSlug={currentListSlug} 
+    <MobileHeader
+      lists={lists}
+      currentListSlug={currentListSlug}
       isLoading={isLoading}
       syncingListSlugs={syncingListSlugs}
       isMenuOpen={isMenuOpen}
-      onMenuClose={() => setIsMenuOpen(false)}
+      onMenuClose={closeMenu}
       onListCreated={handleListCreated}
       onListReplaced={handleListReplaced}
       onListUpdated={handleListUpdated}

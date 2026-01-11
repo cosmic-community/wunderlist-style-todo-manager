@@ -339,7 +339,11 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
             <div className="max-w-2xl mx-auto">
               <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
                 <p className="text-base text-amber-800 dark:text-amber-200 leading-relaxed">
-                  👋 You&apos;re viewing the <strong>public demo</strong>. <Link href="/signup" className="font-medium underline">Sign up</Link> to create your own private Cosmic todo experience!
+                  👋 You&apos;re viewing the <strong>public demo</strong>.{' '}
+                  <Link href="/signup" className="font-medium underline">
+                    Sign up
+                  </Link>
+                  {' '}to create your own private Cosmic todo experience!
                 </p>
               </div>
             </div>

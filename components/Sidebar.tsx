@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { List } from '@/types'
 import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2, Plus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
@@ -155,20 +156,20 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
             </div>
           ) : (
             <div className="mb-4 space-y-2">
-              <a
+              <Link
                 href="/login"
                 className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Log In
-              </a>
-              <a
+              </Link>
+              <Link
                 href="/signup"
                 className="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
               >
                 <SignupIcon className="w-4 h-4" />
                 Sign Up
-              </a>
+              </Link>
             </div>
           )}
 
