@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useRef, Dispatch, SetStateAction } fr
 import { useRouter } from 'next/navigation'
 import { List } from '@/types'
 import Sidebar from '@/components/Sidebar'
-import { getCachedLists, setCachedLists, hasCachedLists } from '@/lib/listsCache'
+import { getCachedLists, setCachedLists, hasCachedLists, clearCachedLists } from '@/lib/listsCache'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface ClientSidebarProps {
   currentListSlug?: string
@@ -23,6 +24,9 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
   const router = useRouter()
   // Track deleted list IDs to prevent them from reappearing on fetch
   const deletedListIds = useRef<Set<string>>(new Set())
+  // Track auth state to refetch lists on login/logout
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
+  const prevAuthState = useRef<boolean | null>(null)
 
   const fetchLists = useCallback(async () => {
     try {
@@ -68,6 +72,24 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
       setIsInitialLoad(false)
     }
   }, [fetchLists])
+
+  // Refetch lists when authentication state changes (login/logout)
+  useEffect(() => {
+    // Skip if auth is still loading
+    if (isAuthLoading) return
+    
+    // Check if auth state has changed
+    if (prevAuthState.current !== null && prevAuthState.current !== isAuthenticated) {
+      // Clear the cache and refetch lists
+      clearCachedLists()
+      deletedListIds.current.clear()
+      setIsInitialLoad(true)
+      fetchLists()
+    }
+    
+    // Update previous auth state
+    prevAuthState.current = isAuthenticated
+  }, [isAuthenticated, isAuthLoading, fetchLists])
 
   const handleListCreated = (newList: List) => {
     // Optimistically add the new list

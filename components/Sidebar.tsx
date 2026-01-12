@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { List, User } from '@/types'
-import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2, Plus, Users, ChevronDown } from 'lucide-react'
+import { CheckSquare, Inbox, MoreHorizontal, Pencil, Trash2, UserPlus, LogIn, UserPlus as SignupIcon, Loader2, Plus } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import CreateListModal from './CreateListModal'
@@ -31,10 +31,7 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
   const [invitingList, setInvitingList] = useState<List | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  // Changed: Added state for shared users dropdown
-  const [openSharedDropdownId, setOpenSharedDropdownId] = useState<string | null>(null)
   const menuRef = useRef<HTMLDivElement>(null)
-  const sharedDropdownRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated, user } = useAuth()
 
   const bucketSlug = process.env.NEXT_PUBLIC_COSMIC_BUCKET_SLUG || 'cosmic-todo'
@@ -43,9 +40,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setOpenMenuId(null)
-      }
-      if (sharedDropdownRef.current && !sharedDropdownRef.current.contains(event.target as Node)) {
-        setOpenSharedDropdownId(null)
       }
     }
 
@@ -81,13 +75,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     e.preventDefault()
     e.stopPropagation()
     setOpenMenuId(openMenuId === listId ? null : listId)
-  }
-
-  // Changed: Added toggle for shared users dropdown
-  const toggleSharedDropdown = (e: React.MouseEvent, listId: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setOpenSharedDropdownId(openSharedDropdownId === listId ? null : listId)
   }
 
   const handleEditClick = (e: React.MouseEvent, list: List) => {
@@ -163,17 +150,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     return ownerId === user.id
   }
 
-  // Changed: Helper function to get shared users as User objects
-  const getSharedUsers = (list: List): User[] => {
-    const sharedWith = list.metadata.shared_with || []
-    return sharedWith.filter((u): u is User => typeof u === 'object' && u !== null && 'id' in u)
-  }
-
-  // Changed: Helper function to get display name for a user
-  const getUserDisplayName = (userObj: User): string => {
-    return userObj.metadata?.display_name || userObj.title || 'Unknown User'
-  }
-
   return (
     <>
       <aside className="hidden md:flex md:flex-col w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 overflow-y-auto">
@@ -187,30 +163,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
               <h2 className="text-xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
             </button>
           </div>
-
-          {/* Show user menu if authenticated, auth buttons if not */}
-          {isAuthenticated ? (
-            <div className="mb-4 -mx-3">
-              <UserMenu />
-            </div>
-          ) : (
-            <div className="mb-4 space-y-2">
-              <Link
-                href="/login"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
-              >
-                <LogIn className="w-4 h-4" />
-                Log In
-              </Link>
-              <Link
-                href="/signup"
-                className="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
-              >
-                <SignupIcon className="w-4 h-4" />
-                Sign Up
-              </Link>
-            </div>
-          )}
 
           <nav className="space-y-1">
             <button
@@ -243,8 +195,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
 
                 {lists.map((list) => {
                   const isSyncing = syncingListSlugs.has(list.slug)
-                  const sharedUsers = getSharedUsers(list)
-                  const hasSharedUsers = sharedUsers.length > 0
                   const isOwner = isListOwner(list)
 
                   return (
@@ -282,41 +232,6 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                           <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
                             Saving...
                           </span>
-                        )}
-
-                        {/* Changed: Shared users indicator with dropdown */}
-                        {!isSyncing && hasSharedUsers && (
-                          <div className="relative" ref={openSharedDropdownId === list.id ? sharedDropdownRef : null}>
-                            <button
-                              onClick={(e) => toggleSharedDropdown(e, list.id)}
-                              className="flex items-center gap-1 px-1.5 py-0.5 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded transition-colors"
-                              aria-label={`Shared with ${sharedUsers.length} user${sharedUsers.length > 1 ? 's' : ''}`}
-                            >
-                              <Users className="w-3 h-3" />
-                              <span>{sharedUsers.length}</span>
-                              <ChevronDown className="w-3 h-3" />
-                            </button>
-
-                            {/* Shared users dropdown */}
-                            {openSharedDropdownId === list.id && (
-                              <div className="absolute left-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                                <div className="px-3 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
-                                  Shared with
-                                </div>
-                                {sharedUsers.map((sharedUser) => (
-                                  <div
-                                    key={sharedUser.id}
-                                    className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2"
-                                  >
-                                    <div className="w-6 h-6 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent">
-                                      {getUserDisplayName(sharedUser).charAt(0).toUpperCase()}
-                                    </div>
-                                    <span className="truncate">{getUserDisplayName(sharedUser)}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
                         )}
 
                         {/* More options button - hide if syncing */}
@@ -394,21 +309,48 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
           </nav>
         </div>
 
-        {/* Built with Cosmic button at bottom of sidebar */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
-          <a
-            href={`https://www.cosmicjs.com?utm_source=bucket_${bucketSlug}&utm_medium=referral&utm_campaign=app_badge&utm_content=built_with_cosmic`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
-          >
-            <img
-              src="https://cdn.cosmicjs.com/b67de7d0-c810-11ed-b01d-23d7b265c299-logo508x500.svg"
-              alt="Cosmic Logo"
-              className="w-4 h-4"
-            />
-            Built with Cosmic
-          </a>
+        {/* Bottom section: Cosmic badge and user menu */}
+        <div className="border-t border-gray-200 dark:border-gray-800">
+          {/* Built with Cosmic button */}
+          <div className="p-4 pb-2">
+            <a
+              href={`https://www.cosmicjs.com?utm_source=bucket_${bucketSlug}&utm_medium=referral&utm_campaign=app_badge&utm_content=built_with_cosmic`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full px-4 py-2.5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg text-sm font-medium transition-colors"
+            >
+              <img
+                src="https://cdn.cosmicjs.com/b67de7d0-c810-11ed-b01d-23d7b265c299-logo508x500.svg"
+                alt="Cosmic Logo"
+                className="w-4 h-4"
+              />
+              Built with Cosmic
+            </a>
+          </div>
+
+          {/* User menu or auth buttons */}
+          {isAuthenticated ? (
+            <div className="px-4 pb-4 pt-2">
+              <UserMenu />
+            </div>
+          ) : (
+            <div className="p-4 pt-2 space-y-2">
+              <Link
+                href="/login"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-accent hover:bg-accent-hover text-white rounded-lg font-medium transition-colors"
+              >
+                <LogIn className="w-4 h-4" />
+                Log In
+              </Link>
+              <Link
+                href="/signup"
+                className="flex items-center justify-center gap-2 w-full px-4 py-2 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition-colors"
+              >
+                <SignupIcon className="w-4 h-4" />
+                Sign Up
+              </Link>
+            </div>
+          )}
         </div>
       </aside>
 

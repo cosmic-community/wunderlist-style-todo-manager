@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { List } from '@/types'
+import { List, User } from '@/types'
+import { Users, ChevronDown } from 'lucide-react'
 
 interface ClientListHeaderProps {
   listSlug: string
@@ -17,6 +18,32 @@ export default function ClientListHeader({ listSlug, refreshKey }: ClientListHea
   const isFetchingRef = useRef(false)
   // Changed: Track if this is the initial mount
   const isInitialMountRef = useRef(true)
+  // State for shared users dropdown
+  const [showSharedDropdown, setShowSharedDropdown] = useState(false)
+  const sharedDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sharedDropdownRef.current && !sharedDropdownRef.current.contains(event.target as Node)) {
+        setShowSharedDropdown(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Helper function to get shared users as User objects
+  const getSharedUsers = (list: List): User[] => {
+    const sharedWith = list.metadata.shared_with || []
+    return sharedWith.filter((u): u is User => typeof u === 'object' && u !== null && 'id' in u)
+  }
+
+  // Helper function to get display name for a user
+  const getUserDisplayName = (userObj: User): string => {
+    return userObj.metadata?.display_name || userObj.title || 'Unknown User'
+  }
 
   const fetchList = useCallback(async (): Promise<List | null> => {
     try {
@@ -120,16 +147,56 @@ export default function ClientListHeader({ listSlug, refreshKey }: ClientListHea
     return null
   }
 
+  const sharedUsers = getSharedUsers(list)
+  const hasSharedUsers = sharedUsers.length > 0
+
   return (
     <div className="mb-6">
-      <div className="flex items-center gap-3 mb-2">
-        <div 
-          className="w-4 h-4 rounded-full flex-shrink-0"
-          style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
-        />
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          {list.metadata.name}
-        </h1>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-4 h-4 rounded-full flex-shrink-0"
+            style={{ backgroundColor: list.metadata.color || '#3b82f6' }}
+          />
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {list.metadata.name}
+          </h1>
+        </div>
+
+        {/* Shared users dropdown - positioned top right */}
+        {hasSharedUsers && (
+          <div className="relative" ref={sharedDropdownRef}>
+            <button
+              onClick={() => setShowSharedDropdown(!showSharedDropdown)}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              aria-label={`Shared with ${sharedUsers.length} user${sharedUsers.length > 1 ? 's' : ''}`}
+            >
+              <Users className="w-4 h-4" />
+              <span>{sharedUsers.length}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showSharedDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Shared users dropdown menu */}
+            {showSharedDropdown && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                  Shared with
+                </div>
+                {sharedUsers.map((sharedUser) => (
+                  <div
+                    key={sharedUser.id}
+                    className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2.5"
+                  >
+                    <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent">
+                      {getUserDisplayName(sharedUser).charAt(0).toUpperCase()}
+                    </div>
+                    <span className="truncate">{getUserDisplayName(sharedUser)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
       {list.metadata.description && (
         <p className="text-gray-600 dark:text-gray-400 ml-7">

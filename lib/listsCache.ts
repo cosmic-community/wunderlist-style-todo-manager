@@ -16,3 +16,7 @@ export function setCachedLists(lists: List[]): void {
 export function hasCachedLists(): boolean {
   return cachedLists !== null
 }
+
+export function clearCachedLists(): void {
+  cachedLists = null
+}

@@ -48,11 +48,11 @@ export default function UserMenu() {
         <span className="font-medium truncate flex-1 text-left max-w-[140px]">
           {user.display_name}
         </span>
-        <ChevronDown className="w-4 h-4 flex-shrink-0" />
+        <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 left-0 md:left-auto md:right-0 mt-2 w-full md:w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
+        <div className="absolute right-0 left-0 md:left-auto md:right-0 bottom-full mb-2 w-full md:w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
             <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
               {user.display_name}

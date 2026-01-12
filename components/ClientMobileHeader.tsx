@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback, useRef, Dispatch, SetStateAction } from 'react'
 import { List } from '@/types'
 import MobileHeader from '@/components/MobileHeader'
-import { getCachedLists, setCachedLists, hasCachedLists } from '@/lib/listsCache'
+import { getCachedLists, setCachedLists, hasCachedLists, clearCachedLists } from '@/lib/listsCache'
+import { useAuth } from '@/contexts/AuthContext'
 
 export interface ClientMobileHeaderProps {
   currentListSlug?: string
@@ -38,6 +39,9 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
   const [syncingListSlugs, setSyncingListSlugs] = useState<Set<string>>(new Set())
   // Track deleted list IDs to prevent them from reappearing on fetch
   const deletedListIds = useRef<Set<string>>(new Set())
+  // Track auth state to refetch lists on login/logout
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
+  const prevAuthState = useRef<boolean | null>(null)
 
   const fetchLists = useCallback(async () => {
     try {
@@ -86,6 +90,24 @@ export default function ClientMobileHeader({ currentListSlug, onListChange, onCr
       setIsLoading(false)
     }
   }, [fetchLists])
+
+  // Refetch lists when authentication state changes (login/logout)
+  useEffect(() => {
+    // Skip if auth is still loading
+    if (isAuthLoading) return
+    
+    // Check if auth state has changed
+    if (prevAuthState.current !== null && prevAuthState.current !== isAuthenticated) {
+      // Clear the cache and refetch lists
+      clearCachedLists()
+      deletedListIds.current.clear()
+      setIsLoading(true)
+      fetchLists()
+    }
+    
+    // Update previous auth state
+    prevAuthState.current = isAuthenticated
+  }, [isAuthenticated, isAuthLoading, fetchLists])
 
   const handleListCreated = (newList: List) => {
     // Optimistically add the new list
