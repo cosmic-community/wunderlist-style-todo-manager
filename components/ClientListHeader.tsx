@@ -89,13 +89,34 @@ export default function ClientListHeader({ listSlug, refreshKey, onDescriptionCh
     }
   }, [listSlug, retryCount, refreshKey, onDescriptionChange])
 
-  // Changed: Handler for list update
-  const handleListUpdate = (updatedList: List) => {
-    setList(updatedList)
-    // Changed: Notify parent about description change after update
-    if (onDescriptionChange) {
-      onDescriptionChange(!!updatedList.metadata?.description)
+  // Changed: Handler for optimistic list update - matches EditListModal's expected signature
+  const handleOptimisticUpdate = (listId: string, updates: Partial<List['metadata']>) => {
+    if (list && list.id === listId) {
+      const updatedList: List = {
+        ...list,
+        metadata: {
+          ...list.metadata,
+          ...updates
+        }
+      }
+      setList(updatedList)
+      // Changed: Notify parent about description change after update
+      if (onDescriptionChange) {
+        onDescriptionChange(!!updatedList.metadata?.description)
+      }
     }
+  }
+
+  // Changed: Handler for optimistic list delete - matches EditListModal's expected signature
+  const handleOptimisticDelete = (listId: string) => {
+    if (list && list.id === listId) {
+      setList(null)
+    }
+  }
+
+  // Changed: Handler for refresh
+  const handleRefresh = () => {
+    setRetryCount(prev => prev + 1)
   }
 
   if (isLoading) {
@@ -137,12 +158,14 @@ export default function ClientListHeader({ listSlug, refreshKey, onDescriptionCh
         </div>
       </div>
 
-      {/* Edit Modal */}
+      {/* Edit Modal - Changed: Updated props to match EditListModal interface */}
       {showEditModal && (
         <EditListModal
           list={list}
           onClose={() => setShowEditModal(false)}
-          onUpdate={handleListUpdate}
+          onOptimisticUpdate={handleOptimisticUpdate}
+          onOptimisticDelete={handleOptimisticDelete}
+          onRefresh={handleRefresh}
         />
       )}
     </>
