@@ -22,6 +22,9 @@ interface TaskCardProps {
   // Changed: Props for drag and drop
   isDragging?: boolean
   showDragHandle?: boolean
+  // Changed: Drag handle listeners and attributes for handle-only dragging
+  dragHandleListeners?: React.HTMLAttributes<HTMLButtonElement>
+  dragHandleAttributes?: React.HTMLAttributes<HTMLButtonElement>
   // Changed: Callback to notify parent when a modal opens/closes (for disabling drag)
   onModalOpenChange?: (isOpen: boolean) => void
 }
@@ -79,6 +82,8 @@ export default function TaskCard({
   onAnimationComplete,
   isDragging: isDraggingProp,
   showDragHandle,
+  dragHandleListeners,
+  dragHandleAttributes,
   onModalOpenChange
 }: TaskCardProps) {
   // Changed: Get checkbox position from user preferences
@@ -281,9 +286,22 @@ export default function TaskCard({
           <div 
             className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-4 md:py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 group ${
               isDraggingProp ? 'shadow-lg ring-2 ring-accent/50 opacity-90 cursor-grabbing' : ''
-            } ${showDragHandle && !task.metadata.completed ? 'cursor-grab' : 'cursor-pointer'}`}
+            } cursor-pointer`}
             onClick={handleCardClick}
           >
+            {/* Drag handle - only show for non-completed tasks when enabled */}
+            {showDragHandle && !task.metadata.completed && (
+              <button
+                className="flex-shrink-0 touch-none cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 -ml-1"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Drag to reorder"
+                {...dragHandleAttributes}
+                {...dragHandleListeners}
+              >
+                <GripVertical className="w-5 h-5" />
+              </button>
+            )}
+            
             {/* Checkbox - left or right based on preference */}
             {checkboxPosition === 'left' && CheckboxButton}
             

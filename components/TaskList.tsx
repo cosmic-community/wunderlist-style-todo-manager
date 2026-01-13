@@ -84,7 +84,7 @@ function SortableTaskCard({
   }
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...(isDragDisabled ? {} : listeners)}>
+    <div ref={setNodeRef} style={style}>
       <TaskCard
         task={task}
         lists={lists}
@@ -95,6 +95,8 @@ function SortableTaskCard({
         onAnimationComplete={onAnimationComplete}
         isDragging={isDragging}
         showDragHandle={true}
+        dragHandleListeners={isDragDisabled ? undefined : listeners}
+        dragHandleAttributes={attributes}
         onModalOpenChange={onModalOpenChange}
       />
     </div>
