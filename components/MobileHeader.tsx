@@ -180,30 +180,6 @@ export default function MobileHeader({
 
           {/* Content area with scroll */}
           <div className="p-5 pb-32">
-            {/* User menu or auth buttons */}
-            {isAuthenticated ? (
-              <div className="mb-6 -mx-3">
-                <UserMenu />
-              </div>
-            ) : (
-              <div className="mb-6 space-y-3">
-                <a
-                  href="/login"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-4 bg-accent hover:bg-accent-hover text-white rounded-xl font-medium text-lg transition-colors"
-                >
-                  <LogIn className="w-5 h-5" />
-                  Log In
-                </a>
-                <a
-                  href="/signup"
-                  className="flex items-center justify-center gap-2 w-full px-4 py-4 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium text-lg transition-colors"
-                >
-                  <SignupIcon className="w-5 h-5" />
-                  Sign Up
-                </a>
-              </div>
-            )}
-
             {/* Navigation */}
             <nav className="space-y-2">
               <button
@@ -217,7 +193,7 @@ export default function MobileHeader({
                 <span className="font-medium text-lg">All Tasks</span>
               </button>
 
-              {isLoading ? (
+            {isLoading ? (
                 <div className="pt-6">
                   <div className="pb-3 px-4">
                     <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -250,7 +226,7 @@ export default function MobileHeader({
                             disabled={isSyncing}
                             className={`flex-1 flex items-center gap-4 text-left ${isSyncing ? 'cursor-not-allowed' : ''}`}
                           >
-                            {isSyncing ? (
+                          {isSyncing ? (
                               <Loader2 className="w-6 h-6 flex-shrink-0 animate-spin text-gray-400" />
                             ) : (
                               <div
@@ -259,17 +235,17 @@ export default function MobileHeader({
                               />
                             )}
                             <span className={`font-medium text-lg flex-1 truncate ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
-                              {list.metadata.name || list.title}
+                            {list.metadata.name || list.title}
                             </span>
                           </button>
 
-                          {isSyncing && (
+                        {isSyncing && (
                             <span className="text-sm text-gray-400 dark:text-gray-500 flex-shrink-0">
                               Saving...
                             </span>
                           )}
 
-                          {!isSyncing && (
+                        {!isSyncing && (
                             <button
                               onClick={(e) => toggleMenu(e, list.id)}
                               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
@@ -280,12 +256,12 @@ export default function MobileHeader({
                           )}
                         </div>
 
-                        {openMenuId === list.id && !isSyncing && (
+                      {openMenuId === list.id && !isSyncing && (
                           <div
                             ref={menuRef}
                             className="absolute right-4 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
                           >
-                            {isAuthenticated && (
+                          {isAuthenticated && (
                               <button
                                 onClick={(e) => handleInviteClick(e, list)}
                                 className="w-full flex items-center gap-3 px-4 py-3 text-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -316,7 +292,7 @@ export default function MobileHeader({
                 </>
               )}
 
-              {/* Create list button */}
+            {/* Create list button */}
               <div className="pt-4">
                 <button
                   onClick={() => setShowCreateModal(true)}
@@ -329,16 +305,43 @@ export default function MobileHeader({
             </nav>
           </div>
 
-          {/* Changed: Close button fixed at bottom right - matches hamburger menu button exactly */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-5 safe-area-inset-bottom">
-            <div className="max-w-2xl mx-auto flex justify-end">
-              <button
-                onClick={() => closeMenu()}
-                className="flex-shrink-0 p-3 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
-                aria-label="Close menu"
-              >
-                <X className="w-6 h-6" />
-              </button>
+          {/* Changed: Bottom section with user menu/auth buttons and close button */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 safe-area-inset-bottom">
+            {/* User menu or auth buttons */}
+            {isAuthenticated ? (
+              <div className="p-5 pb-3">
+                <UserMenu />
+              </div>
+            ) : (
+              <div className="p-5 pb-3 space-y-3">
+                <a
+                  href="/login"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-4 bg-accent hover:bg-accent-hover text-white rounded-xl font-medium text-lg transition-colors"
+                >
+                  <LogIn className="w-5 h-5" />
+                  Log In
+                </a>
+                <a
+                  href="/signup"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-4 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-medium text-lg transition-colors"
+                >
+                  <SignupIcon className="w-5 h-5" />
+                  Sign Up
+                </a>
+              </div>
+            )}
+
+            {/* Close button at bottom right */}
+            <div className="px-5 pb-5 pt-0">
+              <div className="max-w-2xl mx-auto flex justify-end">
+                <button
+                  onClick={() => closeMenu()}
+                  className="flex-shrink-0 p-3 border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  aria-label="Close menu"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
