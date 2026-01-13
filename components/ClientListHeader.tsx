@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { List, User } from '@/types'
-import { Users, ChevronDown, Settings, Inbox, UserPlus } from 'lucide-react'
+import { Users, ChevronDown, Settings, Inbox, UserPlus, Plus } from 'lucide-react'
 import EditListModal from './EditListModal'
 import InviteModal from './InviteModal'
+import CreateListModal from './CreateListModal'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface ClientListHeaderProps {
@@ -14,9 +15,12 @@ interface ClientListHeaderProps {
   onListUpdated?: (listId: string, updates: Partial<List['metadata']>) => void
   onListDeleted?: (listId: string) => void
   onRefresh?: () => void
+  // Changed: Added callback for when a new list is created
+  onListCreated?: (list: List) => void
+  onListReplaced?: (tempId: string, realList: List) => void
 }
 
-export default function ClientListHeader({ listSlug, refreshKey, onListChange, onListUpdated, onListDeleted, onRefresh }: ClientListHeaderProps) {
+export default function ClientListHeader({ listSlug, refreshKey, onListChange, onListUpdated, onListDeleted, onRefresh, onListCreated, onListReplaced }: ClientListHeaderProps) {
   const { user: currentUser } = useAuth()
   const [list, setList] = useState<List | null>(null)
   const [allLists, setAllLists] = useState<List[]>([])
@@ -37,6 +41,8 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
   // State for list selector dropdown
   const [showListSelector, setShowListSelector] = useState(false)
   const listSelectorRef = useRef<HTMLDivElement>(null)
+  // Changed: State for create list modal
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -160,6 +166,33 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
     // Navigate to All Tasks after deletion
     if (onListChange) {
       onListChange(undefined)
+    }
+  }
+
+  // Changed: Handle list created from create modal
+  const handleListCreated = (newList: List) => {
+    // Add to local allLists
+    setAllLists(prev => [...prev, newList])
+    // Notify parent if callback provided
+    if (onListCreated) {
+      onListCreated(newList)
+    }
+  }
+
+  // Changed: Handle list replaced after API confirms creation
+  const handleListReplaced = (tempId: string, realList: List) => {
+    // Update local allLists
+    setAllLists(prev => prev.map(l => l.id === tempId ? realList : l))
+    // Notify parent if callback provided
+    if (onListReplaced) {
+      onListReplaced(tempId, realList)
+    }
+  }
+
+  // Changed: Handle navigation to newly created list
+  const handleNavigateToList = (slug: string) => {
+    if (onListChange) {
+      onListChange(slug)
     }
   }
 
@@ -297,6 +330,20 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
                     <span className="truncate">{listItem.metadata.name || listItem.title}</span>
                   </button>
                 ))}
+
+                {/* Changed: Create list button at bottom of dropdown */}
+                <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
+                  <button
+                    onClick={() => {
+                      setShowListSelector(false)
+                      setShowCreateModal(true)
+                    }}
+                    className="w-full px-4 py-3 text-base md:px-3 md:py-2 md:text-sm text-left text-accent hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>Create list</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -397,6 +444,16 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
           listId={list.id}
           listName={list.metadata.name}
           onClose={() => setShowInviteModal(false)}
+        />
+      )}
+
+      {/* Changed: Create List Modal */}
+      {showCreateModal && (
+        <CreateListModal
+          onClose={() => setShowCreateModal(false)}
+          onListCreated={handleListCreated}
+          onListReplaced={handleListReplaced}
+          onNavigateToList={handleNavigateToList}
         />
       )}
     </>

@@ -320,19 +320,32 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
                     </div>
                   )
                 })}
+
+                {/* Changed: Create list button at bottom of lists section */}
+                <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-accent hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Create list</span>
+                  </button>
+                </div>
               </>
             )}
 
-            {/* Create list button that opens modal */}
-            <div className="pt-4">
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Create List</span>
-              </button>
-            </div>
+            {/* Create list button that opens modal - shown when no lists */}
+            {!isLoading && lists.length === 0 && (
+              <div className="pt-4">
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Create List</span>
+                </button>
+              </div>
+            )}
           </nav>
         </div>
 

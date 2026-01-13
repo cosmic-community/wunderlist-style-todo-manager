@@ -220,7 +220,7 @@ export default function MobileHeader({
                 <span className="font-medium text-lg">All Tasks</span>
               </button>
 
-            {isLoading ? (
+              {isLoading ? (
                 <div className="pt-6">
                   <div className="pb-3 px-4">
                     <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -253,7 +253,7 @@ export default function MobileHeader({
                             disabled={isSyncing}
                             className={`flex-1 flex items-center gap-4 text-left ${isSyncing ? 'cursor-not-allowed' : ''}`}
                           >
-                          {isSyncing ? (
+                            {isSyncing ? (
                               <Loader2 className="w-6 h-6 flex-shrink-0 animate-spin text-gray-400" />
                             ) : (
                               <div
@@ -262,17 +262,17 @@ export default function MobileHeader({
                               />
                             )}
                             <span className={`font-medium text-lg flex-1 truncate ${isSyncing ? 'text-gray-500 dark:text-gray-400' : ''}`}>
-                            {list.metadata.name || list.title}
+                              {list.metadata.name || list.title}
                             </span>
                           </button>
 
-                        {isSyncing && (
+                          {isSyncing && (
                             <span className="text-sm text-gray-400 dark:text-gray-500 flex-shrink-0">
                               Saving...
                             </span>
                           )}
 
-                        {!isSyncing && (
+                          {!isSyncing && (
                             <button
                               onClick={(e) => toggleMenu(e, list.id)}
                               className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 flex-shrink-0"
@@ -283,12 +283,12 @@ export default function MobileHeader({
                           )}
                         </div>
 
-                      {openMenuId === list.id && !isSyncing && (
+                        {openMenuId === list.id && !isSyncing && (
                           <div
                             ref={menuRef}
                             className="absolute right-4 top-full mt-1 w-44 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
                           >
-                          {isAuthenticated && (
+                            {isAuthenticated && (
                               <button
                                 onClick={(e) => handleInviteClick(e, list)}
                                 className="w-full flex items-center gap-3 px-4 py-3 text-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -316,19 +316,32 @@ export default function MobileHeader({
                       </div>
                     )
                   })}
+
+                  {/* Changed: Create list button at bottom of lists section */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                    <button
+                      onClick={() => setShowCreateModal(true)}
+                      className="w-full flex items-center gap-4 px-4 py-4 text-lg text-accent hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                    >
+                      <Plus className="w-6 h-6" />
+                      <span className="font-medium">Create list</span>
+                    </button>
+                  </div>
                 </>
               )}
 
-            {/* Create list button */}
-              <div className="pt-4">
-                <button
-                  onClick={() => setShowCreateModal(true)}
-                  className="w-full flex items-center gap-4 px-4 py-4 text-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors"
-                >
-                  <Plus className="w-6 h-6" />
-                  <span className="font-medium">Create List</span>
-                </button>
-              </div>
+              {/* Create list button - shown when no lists */}
+              {!isLoading && lists.length === 0 && (
+                <div className="pt-4">
+                  <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="w-full flex items-center gap-4 px-4 py-4 text-lg text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl transition-colors"
+                  >
+                    <Plus className="w-6 h-6" />
+                    <span className="font-medium">Create List</span>
+                  </button>
+                </div>
+              )}
             </nav>
           </div>
 

@@ -6,9 +6,10 @@ import ClientSidebar from '@/components/ClientSidebar'
 import ClientMobileHeader from '@/components/ClientMobileHeader'
 import ClientListHeader from '@/components/ClientListHeader'
 import SkeletonLoader from '@/components/SkeletonLoader'
+import CreateListModal from '@/components/CreateListModal'
 import { useRouter, usePathname } from 'next/navigation'
 import { List } from '@/types'
-import { ChevronDown, Inbox } from 'lucide-react'
+import { ChevronDown, Inbox, Plus } from 'lucide-react'
 
 interface ListPageClientProps {
   slug: string
@@ -39,6 +40,9 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
   const [showAllTasksDropdown, setShowAllTasksDropdown] = useState(false)
   const [allLists, setAllLists] = useState<List[]>([])
   const allTasksDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Changed: State for create list modal from All Tasks dropdown
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   // Fetch lists for the All Tasks dropdown
   useEffect(() => {
@@ -118,6 +122,23 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
   const handleMenuOpenRegister = useCallback((fn: () => void) => {
     setOpenMenuFn(() => fn)
   }, [])
+
+  // Changed: Handler for list created from create modal
+  const handleListCreated = (newList: List) => {
+    // Add to local allLists
+    setAllLists(prev => [...prev, newList])
+  }
+
+  // Changed: Handler for list replaced after API confirms creation
+  const handleListReplaced = (tempId: string, realList: List) => {
+    // Update local allLists
+    setAllLists(prev => prev.map(l => l.id === tempId ? realList : l))
+  }
+
+  // Changed: Handler for navigation to newly created list
+  const handleNavigateToList = (slug: string) => {
+    handleListChange(slug)
+  }
 
   return (
     // Changed: Use h-screen with flex layout and overflow-hidden to prevent excessive scrolling
@@ -213,6 +234,20 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
                               <span className="truncate">{listItem.metadata.name || listItem.title}</span>
                             </button>
                           ))}
+
+                          {/* Changed: Create list button at bottom of dropdown */}
+                          <div className="border-t border-gray-200 dark:border-gray-700 mt-1 pt-1">
+                            <button
+                              onClick={() => {
+                                setShowAllTasksDropdown(false)
+                                setShowCreateModal(true)
+                              }}
+                              className="w-full px-4 py-3 text-base md:px-3 md:py-2 md:text-sm text-left text-accent hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                            >
+                              <Plus className="w-5 h-5" />
+                              <span>Create list</span>
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -224,6 +259,17 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
           </div>
         </div>
       </main>
+
+      {/* Changed: Create List Modal for All Tasks dropdown */}
+      {showCreateModal && (
+        <CreateListModal
+          onClose={() => setShowCreateModal(false)}
+          onListCreated={handleListCreated}
+          onListReplaced={handleListReplaced}
+          onCreatingStateChange={setIsCreatingList}
+          onNavigateToList={handleNavigateToList}
+        />
+      )}
     </div>
   )
 }
