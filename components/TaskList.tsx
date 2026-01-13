@@ -68,6 +68,16 @@ function SortableTaskCard({
   onModalOpenChange,
   isDragDisabled,
 }: SortableTaskCardProps) {
+  const [isMobile, setIsMobile] = useState(false)
+  
+  // Detect mobile vs desktop for different drag behaviors
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   const {
     attributes,
     listeners,
@@ -83,8 +93,12 @@ function SortableTaskCard({
     opacity: isDragging ? 0.5 : 1,
   }
 
+  // On mobile: drag from handle only. On desktop: drag from entire card
+  const cardListeners = !isMobile && !isDragDisabled ? listeners : undefined
+  const handleListeners = isMobile && !isDragDisabled ? listeners : undefined
+
   return (
-    <div ref={setNodeRef} style={style}>
+    <div ref={setNodeRef} style={style} {...attributes} {...cardListeners}>
       <TaskCard
         task={task}
         lists={lists}
@@ -95,7 +109,7 @@ function SortableTaskCard({
         onAnimationComplete={onAnimationComplete}
         isDragging={isDragging}
         showDragHandle={true}
-        dragHandleListeners={isDragDisabled ? undefined : listeners}
+        dragHandleListeners={handleListeners}
         dragHandleAttributes={attributes}
         onModalOpenChange={onModalOpenChange}
       />
@@ -634,6 +648,7 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
                   onOptimisticDelete={() => {}}
                   onOptimisticUpdate={() => {}}
                   isDragging={true}
+                  showDragHandle={true}
                 />
               </div>
             ) : null}
