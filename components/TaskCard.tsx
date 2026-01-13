@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Task, List, StyleTheme } from '@/types'
 import { Trash2 } from 'lucide-react'
 import EditTaskModal from '@/components/EditTaskModal'
@@ -266,14 +267,15 @@ export default function TaskCard({
         </div>
       </div>
       
-      {/* Changed: Edit modal */}
-      {showEditModal && (
+      {/* Changed: Edit modal - using portal to render at body level for proper z-index stacking */}
+      {showEditModal && typeof document !== 'undefined' && createPortal(
         <EditTaskModal
           task={task}
           lists={lists}
           onClose={() => setShowEditModal(false)}
           onOptimisticUpdate={onOptimisticUpdate}
-        />
+        />,
+        document.body
       )}
     </>
   )

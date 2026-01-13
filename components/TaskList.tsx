@@ -332,7 +332,8 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
       </div>
 
       {/* Changed: Fixed Add Task Form at bottom - proper positioning with larger padding on mobile */}
-      <div className="fixed bottom-0 left-0 right-0 md:left-64 z-20">
+      {/* z-30 ensures it's above sticky header (z-20) but below modals (z-[100]) */}
+      <div className="fixed bottom-0 left-0 right-0 md:left-64 z-30">
         {/* Demo notice for unauthenticated users - shown above add task form */}
         {!isAuthenticated && (
           <div className="bg-gray-50 dark:bg-black px-5 md:px-4 pt-4 pb-4">

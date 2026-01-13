@@ -83,8 +83,8 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
   }
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
       onClick={handleBackdropClick}
     >
       {/* Changed: Improved responsive modal with fixed header/footer and scrollable content */}
