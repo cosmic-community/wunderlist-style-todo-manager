@@ -5,7 +5,11 @@ import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { LogOut, ChevronDown, Settings } from 'lucide-react'
 
-export default function UserMenu() {
+interface UserMenuProps {
+  isMobile?: boolean
+}
+
+export default function UserMenu({ isMobile = false }: UserMenuProps) {
   const { user, logout } = useAuth()
   const [isOpen, setIsOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -44,11 +48,12 @@ export default function UserMenu() {
             {user.display_name.charAt(0).toUpperCase()}
           </span>
         </div>
-        {/* Changed: Show full name on all screens with truncation */}
-        <span className="font-medium truncate flex-1 text-left max-w-[140px]">
+        {/* Changed: Show full name with flex-1 to take remaining space, pushing chevron to the right */}
+        <span className={`font-medium truncate flex-1 text-left ${isMobile ? 'max-w-none' : 'max-w-[140px]'}`}>
           {user.display_name}
         </span>
-        <ChevronDown className={`w-4 h-4 flex-shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        {/* Changed: ml-auto ensures chevron is always aligned to the right edge */}
+        <ChevronDown className={`w-4 h-4 flex-shrink-0 ml-auto transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
