@@ -38,6 +38,30 @@ function ConfettiParticle({ delay, color, index, total }: { delay: number; color
   )
 }
 
+// Changed: Confetti container that renders at body level via portal
+function ConfettiOverlay({ colors, position }: { colors: string[]; position: { x: number; y: number } }) {
+  return createPortal(
+    <div 
+      className="fixed pointer-events-none z-[9999]"
+      style={{
+        left: position.x,
+        top: position.y,
+        transform: 'translate(-50%, -50%)',
+      }}
+    >
+      <div className="relative w-0 h-0">
+        {colors.map((color, i) => (
+          <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={colors.length} />
+        ))}
+        {colors.map((color, i) => (
+          <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + colors.length} total={colors.length * 2} />
+        ))}
+      </div>
+    </div>,
+    document.body
+  )
+}
+
 export default function TaskCard({ 
   task, 
   lists,
@@ -61,7 +85,10 @@ export default function TaskCard({
   const [showEditModal, setShowEditModal] = useState(false)
   // Changed: Track if we should show the checkmark (delayed state update)
   const [showCheckmark, setShowCheckmark] = useState(task.metadata.completed)
+  // Changed: Track confetti position for portal rendering
+  const [confettiPosition, setConfettiPosition] = useState<{ x: number; y: number } | null>(null)
   const cardRef = useRef<HTMLDivElement>(null)
+  const checkboxRef = useRef<HTMLButtonElement>(null)
   
   // Changed: Track previous completed state with ref to detect transitions
   const prevCompletedRef = useRef(task.metadata.completed)
@@ -74,10 +101,20 @@ export default function TaskCard({
       setShowCelebration(true)
       setShouldHide(false)
       
+      // Changed: Capture checkbox position for portal rendering
+      if (checkboxRef.current) {
+        const rect = checkboxRef.current.getBoundingClientRect()
+        setConfettiPosition({
+          x: rect.left + rect.width / 2,
+          y: rect.top + rect.height / 2,
+        })
+      }
+      
       // Changed: Wait for confetti animation to complete (600ms) then instantly remove
       // The confetti animation is 0.6s, so we wait for it to finish
       const removeTimer = setTimeout(() => {
         setShowCelebration(false)
+        setConfettiPosition(null)
         setShouldHide(true)
         // Changed: Notify parent to remove this task from the celebrating list
         if (onAnimationComplete) {
@@ -92,6 +129,7 @@ export default function TaskCard({
       // Changed: Task was uncompleted, reset states
       setShowCheckmark(false)
       setShowCelebration(false)
+      setConfettiPosition(null)
       setShouldHide(false)
     }
     
@@ -183,19 +221,8 @@ export default function TaskCard({
   // Changed: Checkbox component for reuse - increased sizes for mobile
   const CheckboxButton = (
     <div className="relative flex-shrink-0 flex items-center">
-      {/* Changed: Confetti celebration that radiates outward from center */}
-      {showCelebration && (
-        <div className="absolute inset-0 pointer-events-none z-[5]">
-          {confettiColors.map((color, i) => (
-            <ConfettiParticle key={`a-${i}`} delay={i * 25} color={color} index={i} total={confettiColors.length} />
-          ))}
-          {confettiColors.map((color, i) => (
-            <ConfettiParticle key={`b-${i}`} delay={i * 25 + 60} color={color} index={i + confettiColors.length} total={confettiColors.length * 2} />
-          ))}
-        </div>
-      )}
-      
       <button
+        ref={checkboxRef}
         onClick={(e) => {
           e.stopPropagation()
           handleToggleComplete()
@@ -266,6 +293,11 @@ export default function TaskCard({
           </div>
         </div>
       </div>
+      
+      {/* Changed: Confetti rendered via portal to appear above all elements */}
+      {showCelebration && confettiPosition && typeof document !== 'undefined' && (
+        <ConfettiOverlay colors={confettiColors} position={confettiPosition} />
+      )}
       
       {/* Changed: Edit modal - using portal to render at body level for proper z-index stacking */}
       {showEditModal && typeof document !== 'undefined' && createPortal(
