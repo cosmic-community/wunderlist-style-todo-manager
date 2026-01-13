@@ -58,26 +58,24 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
       onOptimisticAdd(optimisticTask)
     }
 
-    // Send to server in background
-    try {
-      // Changed: Fixed API payload - use 'list' instead of 'list_id' to match API route
-      await fetch('/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: taskTitle,
-          list: currentListId || '', // Changed: Use 'list' to match API route expectations
-          order: 0, // New tasks go to the top
-          priority: 'medium' // Default priority
-        })
+    // Immediately allow new input - don't wait for server response
+    setIsSubmitting(false)
+    setShouldFocus(true)
+
+    // Send to server in background (fire and forget)
+    fetch('/api/tasks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: taskTitle,
+        list: currentListId || '',
+        order: 0,
+        priority: 'medium'
       })
-    } catch (error) {
+    }).catch(error => {
       console.error('Error creating task:', error)
       // Note: We could revert the optimistic add here if needed
-    } finally {
-      setIsSubmitting(false)
-      setShouldFocus(true)
-    }
+    })
   }
 
   return (
