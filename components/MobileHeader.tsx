@@ -191,6 +191,14 @@ export default function MobileHeader({
     }
   }
 
+  // Changed: Handler for clicking Cosmic Todo title to navigate to all tasks (home)
+  const handleTitleClick = () => {
+    closeMenu()
+    if (onListClick) {
+      onListClick(undefined)
+    }
+  }
+
   return (
     <>
 
@@ -199,10 +207,14 @@ export default function MobileHeader({
         <div className="md:hidden fixed inset-0 z-50 bg-white dark:bg-gray-900 safe-area-inset-top safe-area-inset-bottom overflow-y-auto">
           {/* Header */}
           <div className="p-5 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex items-center gap-3">
+            {/* Changed: Made Cosmic Todo clickable to navigate to home (all tasks) */}
+            <button
+              onClick={handleTitleClick}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <CheckSquare className="w-8 h-8 text-accent" />
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Cosmic Todo</h2>
-            </div>
+            </button>
           </div>
 
           {/* Content area with scroll */}
@@ -350,7 +362,7 @@ export default function MobileHeader({
             {/* User menu or auth buttons */}
             {isAuthenticated ? (
               <div className="p-5 pb-3">
-                <UserMenu />
+                <UserMenu isMobile />
               </div>
             ) : (
               <div className="p-5 pb-3 space-y-3">
