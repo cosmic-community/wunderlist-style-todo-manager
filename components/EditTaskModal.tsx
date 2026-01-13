@@ -105,9 +105,9 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
           </button>
         </div>
 
-        {/* Changed: Scrollable content area */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <form id="edit-task-form" onSubmit={handleSubmit} className="space-y-4">
+        {/* Changed: Scrollable content area with overflow-x-hidden to prevent horizontal scroll on mobile */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+          <form id="edit-task-form" onSubmit={handleSubmit} className="space-y-4 overflow-hidden">
             <div>
               <label htmlFor="title" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Title
@@ -158,13 +158,13 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
               <label htmlFor="dueDate" className="block text-sm font-medium mb-1 text-gray-700 dark:text-gray-300">
                 Due Date
               </label>
-              {/* Changed: Improved dark mode date input styling with accent focus */}
+              {/* Changed: Improved dark mode date input styling with accent focus and min-w-0 to prevent overflow on mobile */}
               <input
                 id="dueDate"
                 type="date"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent [color-scheme:light] dark:[color-scheme:dark]"
+                className="w-full min-w-0 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent [color-scheme:light] dark:[color-scheme:dark]"
               />
             </div>
 
