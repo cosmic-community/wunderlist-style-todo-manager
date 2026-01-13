@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Mail, Loader2, CheckCircle, AlertCircle, UserPlus, MessageSquare } from 'lucide-react'
 
 interface InviteModalProps {
@@ -65,9 +66,10 @@ export default function InviteModal({ listId, listName, onClose }: InviteModalPr
     setIsLoading(false)
   }
 
-  return (
+  // Changed: Use portal to render modal at document body level to escape stacking context issues
+  const modalContent = (
     <div 
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] p-4"
       onClick={handleBackdropClick}
     >
       <div 
@@ -189,4 +191,11 @@ export default function InviteModal({ listId, listName, onClose }: InviteModalPr
       </div>
     </div>
   )
+
+  // Changed: Render using portal to escape parent stacking contexts
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body)
+  }
+  
+  return modalContent
 }

@@ -1,11 +1,11 @@
 'use client'
 
-import { Toaster } from 'react-hot-toast'
+import { Toaster, ToastBar } from 'react-hot-toast'
 
 export default function ToastProvider() {
   return (
     <Toaster
-      position="bottom-center"
+      position="bottom-right"
       toastOptions={{
         duration: 3000,
         style: {
@@ -28,6 +28,18 @@ export default function ToastProvider() {
           },
         },
       }}
-    />
+    >
+      {(t) => (
+        <ToastBar
+          toast={t}
+          style={{
+            ...t.style,
+            animation: t.visible
+              ? 'slideInFromRight 0.2s ease-out forwards'
+              : 'slideOutToRight 0.15s ease-in forwards',
+          }}
+        />
+      )}
+    </Toaster>
   )
 }

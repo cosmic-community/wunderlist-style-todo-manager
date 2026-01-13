@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import type { Task, List, TaskPriority } from '@/types'
 
@@ -82,7 +83,8 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
     }
   }
 
-  return (
+  // Changed: Use portal to render modal at document body level to escape stacking context issues
+  const modalContent = (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[100]"
       onClick={handleBackdropClick}
@@ -213,4 +215,11 @@ export default function EditTaskModal({ task, lists, onClose, onOptimisticUpdate
       </div>
     </div>
   )
+
+  // Changed: Render using portal to escape parent stacking contexts
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body)
+  }
+  
+  return modalContent
 }

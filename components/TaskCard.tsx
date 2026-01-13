@@ -1,12 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, forwardRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Task, List, StyleTheme } from '@/types'
-import { Trash2 } from 'lucide-react'
+import { Trash2, FileText, Flag, Calendar, GripVertical } from 'lucide-react'
 import EditTaskModal from '@/components/EditTaskModal'
 import { useAuth } from '@/contexts/AuthContext'
 import { useTheme } from '@/components/ThemeProvider'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface TaskCardProps {
   task: Task
@@ -17,6 +19,14 @@ interface TaskCardProps {
   onSyncComplete?: (taskId: string) => void
   // Changed: Added callback to notify parent when task should be removed after animation
   onAnimationComplete?: (taskId: string) => void
+  // Changed: Props for drag and drop
+  isDragging?: boolean
+  showDragHandle?: boolean
+  // Changed: Drag handle listeners and attributes for handle-only dragging
+  dragHandleListeners?: React.HTMLAttributes<HTMLButtonElement>
+  dragHandleAttributes?: React.HTMLAttributes<HTMLButtonElement>
+  // Changed: Callback to notify parent when a modal opens/closes (for disabling drag)
+  onModalOpenChange?: (isOpen: boolean) => void
 }
 
 // Changed: Simplified confetti particle without overflow issues
@@ -69,7 +79,12 @@ export default function TaskCard({
   onOptimisticDelete,
   onOptimisticUpdate,
   onSyncComplete,
-  onAnimationComplete
+  onAnimationComplete,
+  isDragging: isDraggingProp,
+  showDragHandle,
+  dragHandleListeners,
+  dragHandleAttributes,
+  onModalOpenChange
 }: TaskCardProps) {
   // Changed: Get checkbox position from user preferences
   const { user } = useAuth()
@@ -199,6 +214,13 @@ export default function TaskCard({
   // Changed: Handler for clicking the card area (not the checkbox)
   const handleCardClick = () => {
     setShowEditModal(true)
+    onModalOpenChange?.(true)
+  }
+  
+  // Changed: Handler for closing modal
+  const handleCloseModal = () => {
+    setShowEditModal(false)
+    onModalOpenChange?.(false)
   }
   
   // Changed: Theme-aware confetti colors - properly typed
@@ -257,29 +279,40 @@ export default function TaskCard({
       {/* Changed: Simple render without collapse animation - task just disappears after confetti */}
       <div 
         ref={cardRef}
-        className="relative"
+        className={`relative ${isDraggingProp ? 'z-50' : ''}`}
       >
         {/* Changed: Removed overflow-hidden to allow confetti to be visible outside the card - increased padding for mobile */}
         <div className="relative">
           <div 
-            className="bg-white dark:bg-gray-900 rounded-xl px-4 py-4 md:py-3 flex items-center gap-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800"
-            style={{
-              // Changed: Reverse flex direction when checkbox is on right
-              flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
-            }}
+            className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-4 md:py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 group ${
+              isDraggingProp ? 'shadow-lg ring-2 ring-accent/50 opacity-90 cursor-grabbing' : ''
+            } ${showDragHandle && !task.metadata.completed ? 'md:cursor-grab' : ''} cursor-pointer`}
             onClick={handleCardClick}
           >
-            {/* Changed: Checkbox with confetti positioned around it - allow overflow */}
-            {CheckboxButton}
+            {/* Drag handle - mobile only, LEFT side when checkbox is on right */}
+            {showDragHandle && !task.metadata.completed && checkboxPosition === 'right' && (
+              <button
+                className="md:hidden flex-shrink-0 touch-none cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 -ml-1"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Drag to reorder"
+                {...dragHandleAttributes}
+                {...dragHandleListeners}
+              >
+                <GripVertical className="w-5 h-5" />
+              </button>
+            )}
             
-            {/* Changed: Title - use showCheckmark for visual styling - increased text size on mobile */}
+            {/* Checkbox - left or right based on preference */}
+            {checkboxPosition === 'left' && CheckboxButton}
+            
+            {/* Title - use showCheckmark for visual styling - increased text size on mobile */}
             <span className={`flex-1 text-lg md:text-base transition-all duration-300 ease-out ${
               showCheckmark ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-white'
             }`}>
               {task.metadata.title}
             </span>
             
-            {/* Changed: Delete button - only show for completed tasks that aren't celebrating - increased touch target */}
+            {/* Delete button - only show for completed tasks that aren't celebrating */}
             {task.metadata.completed && !showCelebration && (
               <button
                 onClick={handleDelete}
@@ -290,6 +323,55 @@ export default function TaskCard({
                 <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
               </button>
             )}
+            
+            {/* Task attribute indicators - description and due date */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Description indicator */}
+              {task.metadata.description && (
+                <span title="Has description">
+                  <FileText className={`w-4 h-4 ${showCheckmark ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400 dark:text-gray-500'}`} />
+                </span>
+              )}
+              
+              {/* Due date indicator */}
+              {task.metadata.due_date && (
+                <span title={`Due: ${new Date(task.metadata.due_date).toLocaleDateString()}`}>
+                  <Calendar className={`w-4 h-4 ${showCheckmark ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400 dark:text-gray-500'}`} />
+                </span>
+              )}
+            </div>
+
+            {/* Priority flag - next to checkbox */}
+            {task.metadata.priority && (
+              <span title={`Priority: ${task.metadata.priority.value}`} className="flex-shrink-0">
+                <Flag className={`w-4 h-4 ${
+                  showCheckmark 
+                    ? 'text-gray-300 dark:text-gray-600' 
+                    : task.metadata.priority.key === 'high' 
+                      ? 'text-red-500 dark:text-red-400' 
+                      : task.metadata.priority.key === 'medium' 
+                        ? 'text-gray-500 dark:text-gray-400' 
+                        : 'text-blue-500 dark:text-blue-400'
+                }`} />
+              </span>
+            )}
+
+            {/* Checkbox - right side if preference is right */}
+            {checkboxPosition === 'right' && CheckboxButton}
+            
+            {/* Drag handle - mobile only, RIGHT side when checkbox is on left */}
+            {showDragHandle && !task.metadata.completed && checkboxPosition === 'left' && (
+              <button
+                className="md:hidden flex-shrink-0 touch-none cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 -mr-1"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Drag to reorder"
+                {...dragHandleAttributes}
+                {...dragHandleListeners}
+              >
+                <GripVertical className="w-5 h-5" />
+              </button>
+            )}
+            
           </div>
         </div>
       </div>
@@ -304,7 +386,7 @@ export default function TaskCard({
         <EditTaskModal
           task={task}
           lists={lists}
-          onClose={() => setShowEditModal(false)}
+          onClose={handleCloseModal}
           onOptimisticUpdate={onOptimisticUpdate}
         />,
         document.body

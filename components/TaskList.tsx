@@ -6,8 +6,29 @@ import { Task, List } from '@/types'
 import TaskCard from '@/components/TaskCard'
 import AddTaskForm from '@/components/AddTaskForm'
 import EmptyState from '@/components/EmptyState'
+import AllDoneCelebration from '@/components/AllDoneCelebration'
 import { ChevronRight, Menu } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 interface TaskListProps {
   initialTasks: Task[]
@@ -23,6 +44,79 @@ interface PendingTaskState {
   // Add other fields here as needed for other optimistic updates
 }
 
+// Sortable wrapper component for TaskCard
+interface SortableTaskCardProps {
+  task: Task
+  lists: List[]
+  onOptimisticToggle: (taskId: string) => void
+  onOptimisticDelete: (taskId: string) => void
+  onOptimisticUpdate: (taskId: string, updates: Partial<Task['metadata']>) => void
+  onSyncComplete: (taskId: string) => void
+  onAnimationComplete: (taskId: string) => void
+  onModalOpenChange: (isOpen: boolean) => void
+  isDragDisabled: boolean
+}
+
+function SortableTaskCard({
+  task,
+  lists,
+  onOptimisticToggle,
+  onOptimisticDelete,
+  onOptimisticUpdate,
+  onSyncComplete,
+  onAnimationComplete,
+  onModalOpenChange,
+  isDragDisabled,
+}: SortableTaskCardProps) {
+  const [isMobile, setIsMobile] = useState(false)
+  
+  // Detect mobile vs desktop for different drag behaviors
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id, disabled: isDragDisabled })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  // On mobile: drag from handle only. On desktop: drag from entire card
+  const cardListeners = !isMobile && !isDragDisabled ? listeners : undefined
+  const handleListeners = isMobile && !isDragDisabled ? listeners : undefined
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...cardListeners}>
+      <TaskCard
+        task={task}
+        lists={lists}
+        onOptimisticToggle={onOptimisticToggle}
+        onOptimisticDelete={onOptimisticDelete}
+        onOptimisticUpdate={onOptimisticUpdate}
+        onSyncComplete={onSyncComplete}
+        onAnimationComplete={onAnimationComplete}
+        isDragging={isDragging}
+        showDragHandle={true}
+        dragHandleListeners={handleListeners}
+        dragHandleAttributes={attributes}
+        onModalOpenChange={onModalOpenChange}
+      />
+    </div>
+  )
+}
+
 export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop, onOpenMenu }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
@@ -36,6 +130,38 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
   const [celebratingTasks, setCelebratingTasks] = useState<Set<string>>(new Set())
   // Changed: Track tasks with pending server updates to preserve optimistic state
   const pendingServerUpdatesRef = useRef<Set<string>>(new Set())
+  // Changed: Track active dragging task for overlay
+  const [activeTask, setActiveTask] = useState<Task | null>(null)
+  // Changed: Track if we're in the middle of a reorder operation
+  const isReorderingRef = useRef(false)
+  // Changed: Store local order values to preserve during server sync
+  const localOrderMapRef = useRef<Map<string, number>>(new Map())
+  // Changed: AbortController to cancel pending reorder requests
+  const reorderAbortControllerRef = useRef<AbortController | null>(null)
+  // Changed: Track if any modal is open to disable dragging
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  // Changed: Track if we should show the "all done" celebration
+  const [showAllDoneCelebration, setShowAllDoneCelebration] = useState(false)
+  // Changed: Track if user just completed a task (for triggering celebration)
+  const justCompletedTaskRef = useRef(false)
+
+  // Changed: Set up drag and drop sensors with touch support
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement required before drag starts
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200, // 200ms hold before drag starts on touch
+        tolerance: 5, // Allow 5px movement during delay
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
 
   // Changed: Get current list name for empty state
   const currentList = listSlug ? lists.find(l => l.slug === listSlug) : null
@@ -130,6 +256,10 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
         const pendingState = pendingStateChangesRef.current.get(serverTask.id)
         const hasPendingUpdate = pendingServerUpdatesRef.current.has(serverTask.id)
 
+        // Check if we have a local order value to preserve
+        const localOrder = localOrderMapRef.current.get(serverTask.id)
+        const shouldPreserveOrder = isReorderingRef.current && localOrder !== undefined
+
         if (localTask && (pendingState || hasPendingUpdate)) {
           // Changed: Preserve local optimistic state if there's a pending update
           // But merge in any other updated fields from server
@@ -140,12 +270,20 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
               // Preserve local completed state if pending
               completed: pendingState?.completed !== undefined
                 ? pendingState.completed
-                : (hasPendingUpdate ? localTask.metadata.completed : serverTask.metadata.completed)
+                : (hasPendingUpdate ? localTask.metadata.completed : serverTask.metadata.completed),
+              // Preserve local order if we're reordering
+              order: shouldPreserveOrder ? localOrder : serverTask.metadata.order
             }
           })
         } else {
-          // No pending state, use server data
-          mergedTasks.push(serverTask)
+          // No pending state, use server data but preserve order if reordering
+          mergedTasks.push({
+            ...serverTask,
+            metadata: {
+              ...serverTask.metadata,
+              order: shouldPreserveOrder ? localOrder : serverTask.metadata.order
+            }
+          })
         }
 
         processedIds.add(serverTask.id)
@@ -175,6 +313,56 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
     }
   }, [])
 
+  // Changed: Ref for celebration timer
+  const celebrationTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Changed: Detect when all tasks are completed and show celebration
+  useEffect(() => {
+    // Only check if user just completed a task
+    if (!justCompletedTaskRef.current) {
+      return
+    }
+
+    // Calculate real pending tasks (excluding celebrating ones since they're about to be completed)
+    const realPendingCount = tasks.filter(
+      task => !task.metadata.completed && !celebratingTasks.has(task.id)
+    ).length
+    const totalTasks = tasks.length
+
+    // Only show celebration if:
+    // 1. User just completed a task
+    // 2. Now we have 0 pending tasks (all completed)
+    // 3. We have tasks (not an empty list)
+    // 4. No timer already running
+    const shouldCelebrate =
+      realPendingCount === 0 &&
+      totalTasks > 0 &&
+      !celebrationTimerRef.current
+
+    if (shouldCelebrate) {
+      // Reset the flag
+      justCompletedTaskRef.current = false
+
+      // Wait a brief moment before showing the celebration
+      celebrationTimerRef.current = setTimeout(() => {
+        setShowAllDoneCelebration(true)
+        celebrationTimerRef.current = null
+      }, 400)
+    } else {
+      // Reset the flag if we're not celebrating
+      justCompletedTaskRef.current = false
+    }
+  }, [tasks, celebratingTasks])
+
+  // Changed: Cleanup timer on unmount only
+  useEffect(() => {
+    return () => {
+      if (celebrationTimerRef.current) {
+        clearTimeout(celebrationTimerRef.current)
+      }
+    }
+  }, [])
+
   // Handlers for optimistic updates
   // Changed: Scroll to top after adding task to fix mobile scroll issues
   const handleOptimisticAdd = useCallback((task: Task) => {
@@ -199,8 +387,9 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
         const newCompletedState = !task.metadata.completed
         pendingStateChangesRef.current.set(taskId, { completed: newCompletedState })
 
-        // Changed: If task is becoming completed, add to celebrating set
+        // Changed: If task is becoming completed, add to celebrating set and mark that user just completed a task
         if (newCompletedState) {
+          justCompletedTaskRef.current = true
           setCelebratingTasks(prevCelebrating => {
             const newSet = new Set(prevCelebrating)
             newSet.add(taskId)
@@ -271,8 +460,147 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
     pendingServerUpdatesRef.current.delete(taskId)
   }, [])
 
+  // Changed: Handler for modal open/close to disable dragging when modal is open
+  const handleModalOpenChange = useCallback((isOpen: boolean) => {
+    setIsModalOpen(isOpen)
+  }, [])
+
+  // Changed: Handler for when the all-done celebration completes
+  const handleCelebrationComplete = useCallback(() => {
+    setShowAllDoneCelebration(false)
+  }, [])
+
+  // Changed: Handle drag start - store the active task for the overlay
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const { active } = event
+    const task = tasks.find(t => t.id === active.id)
+    if (task) {
+      setActiveTask(task)
+    }
+  }, [tasks])
+
+  // Changed: Handle drag end - reorder tasks and persist to API
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveTask(null)
+
+    if (!over || active.id === over.id) {
+      return
+    }
+
+    // Get only pending (non-completed) tasks for reordering - SORTED by current order
+    const pendingTasksList = tasks
+      .filter(task => !task.metadata.completed || celebratingTasks.has(task.id))
+      .sort((a, b) => {
+        const orderA = a.metadata.order ?? Infinity
+        const orderB = b.metadata.order ?? Infinity
+        if (orderA !== orderB) return orderA - orderB
+        return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+      })
+    
+    const oldIndex = pendingTasksList.findIndex(t => t.id === active.id)
+    const newIndex = pendingTasksList.findIndex(t => t.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) {
+      return
+    }
+
+    // Reorder the pending tasks
+    const reorderedPendingTasks = arrayMove(pendingTasksList, oldIndex, newIndex)
+
+    // Assign new order values
+    const updatedPendingTasks = reorderedPendingTasks.map((task, index) => ({
+      ...task,
+      metadata: { ...task.metadata, order: index }
+    }))
+
+    // Store local order values to preserve during server sync
+    isReorderingRef.current = true
+    localOrderMapRef.current.clear()
+    updatedPendingTasks.forEach((task, index) => {
+      localOrderMapRef.current.set(task.id, index)
+    })
+
+    // Merge back with completed tasks - update order values in the full tasks array
+    const newTasks = tasks.map(task => {
+      const updatedTask = updatedPendingTasks.find(t => t.id === task.id)
+      if (updatedTask) {
+        return updatedTask
+      }
+      return task
+    })
+
+    // Optimistically update local state
+    setTasks(newTasks)
+
+    // Persist to server
+    try {
+      // Abort any pending reorder request
+      if (reorderAbortControllerRef.current) {
+        reorderAbortControllerRef.current.abort()
+      }
+      
+      // Create new abort controller for this request
+      reorderAbortControllerRef.current = new AbortController()
+      
+      const reorderData = updatedPendingTasks.map((task, index) => ({
+        id: task.id,
+        order: index
+      }))
+
+      console.log('Sending reorder request:', JSON.stringify(reorderData, null, 2))
+
+      const response = await fetch('/api/tasks/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tasks: reorderData }),
+        signal: reorderAbortControllerRef.current.signal
+      })
+
+      const result = await response.json()
+      console.log('Reorder response:', JSON.stringify(result, null, 2))
+
+      if (!response.ok) {
+        console.error('Reorder failed:', result)
+        // Revert on error
+        isReorderingRef.current = false
+        localOrderMapRef.current.clear()
+        reorderAbortControllerRef.current = null
+        setTasks(tasks)
+      } else {
+        // Success - clear reordering flag after a delay to let server catch up
+        setTimeout(() => {
+          isReorderingRef.current = false
+          localOrderMapRef.current.clear()
+          reorderAbortControllerRef.current = null
+        }, 2000)
+      }
+    } catch (error) {
+      // Ignore abort errors
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Reorder request aborted')
+        return
+      }
+      console.error('Error saving task order:', error)
+      // Revert on error
+      isReorderingRef.current = false
+      localOrderMapRef.current.clear()
+      reorderAbortControllerRef.current = null
+      setTasks(tasks)
+    }
+  }, [tasks, celebratingTasks])
+
   // Changed: Include celebrating tasks in pending list so they stay visible during animation
-  const pendingTasks = tasks.filter(task => !task.metadata.completed || celebratingTasks.has(task.id))
+  // Sort by order field if available, otherwise by created_at
+  const pendingTasks = tasks
+    .filter(task => !task.metadata.completed || celebratingTasks.has(task.id))
+    .sort((a, b) => {
+      const orderA = a.metadata.order ?? Infinity
+      const orderB = b.metadata.order ?? Infinity
+      if (orderA !== orderB) return orderA - orderB
+      // Fall back to created_at for tasks without order
+      return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+    })
   // Changed: Exclude celebrating tasks from completed list temporarily
   const completedTasks = tasks.filter(task => task.metadata.completed && !celebratingTasks.has(task.id))
 
@@ -280,19 +608,52 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
     <>
       {/* Changed: Task list with proper spacing - added pb-28 for larger mobile bottom padding */}
       <div className="space-y-2.5 md:space-y-2 pb-28 md:pb-24">
-        {/* Pending Tasks */}
-        {pendingTasks.map((task) => (
-          <TaskCard
-            key={task.id}
-            task={task}
-            lists={lists}
-            onOptimisticToggle={handleOptimisticToggle}
-            onOptimisticDelete={handleOptimisticDelete}
-            onOptimisticUpdate={handleOptimisticUpdate}
-            onSyncComplete={clearPendingState}
-            onAnimationComplete={handleAnimationComplete}
-          />
-        ))}
+        {/* Pending Tasks - with drag and drop support */}
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={pendingTasks.map(t => t.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2.5 md:space-y-2">
+              {pendingTasks.map((task) => (
+                <SortableTaskCard
+                  key={task.id}
+                  task={task}
+                  lists={lists}
+                  onOptimisticToggle={handleOptimisticToggle}
+                  onOptimisticDelete={handleOptimisticDelete}
+                  onOptimisticUpdate={handleOptimisticUpdate}
+                  onSyncComplete={clearPendingState}
+                  onAnimationComplete={handleAnimationComplete}
+                  onModalOpenChange={handleModalOpenChange}
+                  isDragDisabled={isModalOpen}
+                />
+              ))}
+            </div>
+          </SortableContext>
+
+          {/* Drag overlay for smooth visual feedback */}
+          <DragOverlay>
+            {activeTask ? (
+              <div className="opacity-90">
+                <TaskCard
+                  task={activeTask}
+                  lists={lists}
+                  onOptimisticToggle={() => {}}
+                  onOptimisticDelete={() => {}}
+                  onOptimisticUpdate={() => {}}
+                  isDragging={true}
+                  showDragHandle={true}
+                />
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
 
         {/* Changed: Completed Section - Collapsible - increased touch targets */}
         {completedTasks.length > 0 && (
@@ -374,6 +735,11 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
           </div>
         </div>
       </div>
+
+      {/* Changed: All done celebration when all tasks are completed */}
+      {showAllDoneCelebration && (
+        <AllDoneCelebration onComplete={handleCelebrationComplete} />
+      )}
     </>
   )
 }

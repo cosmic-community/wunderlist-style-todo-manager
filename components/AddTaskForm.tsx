@@ -47,7 +47,9 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
       metadata: {
         title: taskTitle,
         completed: false,
-        list: currentListId || ''
+        list: currentListId || '',
+        order: 0, // Changed: New tasks go to the top
+        priority: { key: 'medium', value: 'Medium' } // Default priority
       }
     }
 
@@ -64,7 +66,9 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: taskTitle,
-          list: currentListId || '' // Changed: Use 'list' to match API route expectations
+          list: currentListId || '', // Changed: Use 'list' to match API route expectations
+          order: 0, // New tasks go to the top
+          priority: 'medium' // Default priority
         })
       })
     } catch (error) {

@@ -20,6 +20,7 @@ export interface Task {
     list?: List | string
     owner?: User | string
     starred?: boolean
+    order?: number
   }
 }
 

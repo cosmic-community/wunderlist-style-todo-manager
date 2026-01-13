@@ -197,7 +197,8 @@ export async function POST(request: Request) {
         priority: data.priority ? { key: data.priority, value: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) } : { key: 'medium', value: 'Medium' },
         due_date: data.due_date || '',
         list: data.list || '',
-        owner: ownerId // Changed: Always set owner to current user
+        owner: ownerId, // Changed: Always set owner to current user
+        order: data.order ?? 0 // Changed: Include order field for new tasks
       }
     })
     

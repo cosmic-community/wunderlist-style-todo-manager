@@ -62,29 +62,28 @@ export default function ClientSidebar({ currentListSlug, onListChange, onCreatin
     }
   }, [])
 
-  // Changed: Only fetch on mount if we don't have cached data
-  // This prevents refetching when navigating between lists
-  useEffect(() => {
-    if (!hasCachedLists()) {
-      fetchLists()
-    } else {
-      // Already have cached data, just mark as loaded
-      setIsInitialLoad(false)
-    }
-  }, [fetchLists])
-
-  // Refetch lists when authentication state changes (login/logout)
+  // Fetch lists on mount and when auth state changes
   useEffect(() => {
     // Skip if auth is still loading
     if (isAuthLoading) return
-    
+
     // Check if auth state has changed
-    if (prevAuthState.current !== null && prevAuthState.current !== isAuthenticated) {
-      // Clear the cache and refetch lists
+    const authStateChanged = prevAuthState.current !== null && prevAuthState.current !== isAuthenticated
+    
+    if (authStateChanged) {
+      // Auth state changed (login/logout) - clear cache and refetch
       clearCachedLists()
       deletedListIds.current.clear()
+      setLists([])
       setIsInitialLoad(true)
       fetchLists()
+    } else if (prevAuthState.current === null) {
+      // Initial mount - fetch if no cache OR if user is authenticated (to get fresh user data)
+      if (!hasCachedLists() || isAuthenticated) {
+        fetchLists()
+      } else {
+        setIsInitialLoad(false)
+      }
     }
     
     // Update previous auth state

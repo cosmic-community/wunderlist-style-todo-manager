@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { List } from '@/types'
 import { X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -141,9 +142,10 @@ export default function CreateListModal({
     }
   }
   
-  return (
+  // Changed: Use portal to render modal at document body level to escape stacking context issues
+  const modalContent = (
     <div 
-      className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="fixed inset-0 top-0 left-0 right-0 bottom-0 z-[100] flex items-center justify-center p-4 bg-black bg-opacity-50"
       onClick={handleBackdropClick}
     >
       <div 
@@ -235,4 +237,11 @@ export default function CreateListModal({
       </div>
     </div>
   )
+
+  // Changed: Render using portal to escape parent stacking contexts
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body)
+  }
+  
+  return modalContent
 }

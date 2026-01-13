@@ -10,6 +10,7 @@ import EditListModal from './EditListModal'
 import SkeletonLoader from './SkeletonLoader'
 import UserMenu from './UserMenu'
 import InviteModal from './InviteModal'
+import ConfirmationModal from './ConfirmationModal'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface SidebarProps {
@@ -31,6 +32,9 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
   const [invitingList, setInvitingList] = useState<List | null>(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  // Changed: Added state for delete confirmation modal
+  const [listToDelete, setListToDelete] = useState<List | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const { isAuthenticated, user } = useAuth()
 
@@ -93,22 +97,45 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
     }
   }
 
+  // Changed: Show confirmation modal instead of deleting immediately
   const handleDeleteClick = (e: React.MouseEvent, listId: string) => {
     e.preventDefault()
     e.stopPropagation()
     setOpenMenuId(null)
 
-    const listToDelete = lists.find(l => l.id === listId)
-    const listName = listToDelete?.metadata.name || listToDelete?.title || 'List'
+    const list = lists.find(l => l.id === listId)
+    if (list) {
+      setListToDelete(list)
+    }
+  }
 
-    handleOptimisticDelete(listId)
-    toast.success(`"${listName}" deleted`)
+  // Changed: Handler for actually deleting after confirmation
+  const handleConfirmDelete = async () => {
+    if (!listToDelete || isDeleting) return
 
-    fetch(`/api/lists/${listId}`, {
-      method: 'DELETE'
-    }).catch(error => {
+    setIsDeleting(true)
+    const listName = listToDelete.metadata.name || listToDelete.title || 'List'
+    const listId = listToDelete.id
+
+    try {
+      const response = await fetch(`/api/lists/${listId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete list')
+      }
+
+      // Only update UI and close modal after successful deletion
+      handleOptimisticDelete(listId)
+      setListToDelete(null)
+      toast.success(`"${listName}" deleted`)
+    } catch (error) {
       console.error('Error deleting list:', error)
-    })
+      toast.error('Failed to delete list')
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   const handleListNavigation = (e: React.MouseEvent, slug?: string, isSyncing?: boolean) => {
@@ -382,6 +409,21 @@ export default function Sidebar({ lists, currentListSlug, isLoading = false, syn
           listId={invitingList.id}
           listName={invitingList.metadata.name}
           onClose={() => setInvitingList(null)}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {listToDelete && (
+        <ConfirmationModal
+          title="Delete List"
+          message={`Are you sure you want to delete "${listToDelete.metadata.name || listToDelete.title}"? This action cannot be undone.`}
+          secondaryMessage="Note: Tasks in this list will not be deleted, but they will no longer be associated with this list."
+          confirmLabel="Delete List"
+          cancelLabel="Cancel"
+          confirmVariant="danger"
+          isLoading={isDeleting}
+          onConfirm={handleConfirmDelete}
+          onCancel={() => setListToDelete(null)}
         />
       )}
     </>
