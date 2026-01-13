@@ -242,9 +242,14 @@
     border-bottom-color: #374151;
   }
 
-  /* Changed: Add padding to list content to account for fixed header - adjusted for proper spacing */
-  .list-content-with-fixed-header {
-    padding-top: 5rem;
+  /* Changed: Add padding to list content for fixed header - WITH description (larger header) */
+  .list-content-with-description {
+    padding-top: 6.5rem;
+  }
+
+  /* Changed: Add padding to list content for fixed header - WITHOUT description (smaller header) */
+  .list-content-no-description {
+    padding-top: 4.5rem;
   }
 }
 
@@ -259,10 +264,10 @@
   }
   100% {
     transform: translate(-50%, -50%) 
-                         translateX(calc(cos(var(--confetti-angle)) * 80px))
-                         translateY(calc(sin(var(--confetti-angle)) * 80px))
-                         rotate(720deg)
-                         scale(0.3);
+               translateX(calc(cos(var(--confetti-angle)) * 80px))
+               translateY(calc(sin(var(--confetti-angle)) * 80px))
+               rotate(720deg)
+               scale(0.3);
     opacity: 0;
   }
 }

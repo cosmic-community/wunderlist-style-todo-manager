@@ -7,6 +7,7 @@ import ClientMobileHeader from '@/components/ClientMobileHeader'
 import ClientListHeader from '@/components/ClientListHeader'
 import SkeletonLoader from '@/components/SkeletonLoader'
 import { useRouter, usePathname } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ListPageClientProps {
   slug: string
@@ -15,6 +16,7 @@ interface ListPageClientProps {
 export default function ListPageClient({ slug: initialSlug }: ListPageClientProps) {
   const router = useRouter()
   const pathname = usePathname()
+  const { isAuthenticated } = useAuth()
   
   // Changed: Ref to scrollable container to reset scroll on navigation
   const scrollContainerRef = useRef<HTMLDivElement>(null)
@@ -32,6 +34,9 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
   
   // Changed: Store the menu open function from MobileHeader
   const [openMenuFn, setOpenMenuFn] = useState<(() => void) | null>(null)
+  
+  // Changed: Track if current list has a description for dynamic spacing
+  const [hasDescription, setHasDescription] = useState(false)
 
   // Changed: Sync currentListSlug with URL changes (browser back/forward)
   useEffect(() => {
@@ -78,6 +83,11 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
   const handleMenuOpenRegister = useCallback((fn: () => void) => {
     setOpenMenuFn(() => fn)
   }, [])
+  
+  // Changed: Callback to update description state from ClientListHeader
+  const handleDescriptionChange = useCallback((hasDesc: boolean) => {
+    setHasDescription(hasDesc)
+  }, [])
 
   return (
     // Changed: Use h-screen with flex layout and overflow-hidden to prevent excessive scrolling
@@ -104,7 +114,11 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
         {!isCreatingList && (
           <div className="md:hidden fixed-list-header">
             {currentListSlug ? (
-              <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
+              <ClientListHeader 
+                listSlug={currentListSlug} 
+                refreshKey={refreshKey} 
+                onDescriptionChange={handleDescriptionChange}
+              />
             ) : (
               <div className="max-w-2xl mx-auto">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -126,13 +140,25 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
                 <div className="hidden md:block">
                   <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
                 </div>
-                {/* Changed: Add top padding on mobile to account for fixed header */}
-                <div className="md:hidden list-content-with-fixed-header">
-                  <ClientTaskList listSlug={currentListSlug} refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                {/* Changed: Add dynamic top padding on mobile based on description presence */}
+                <div className={`md:hidden ${hasDescription ? 'list-content-with-description' : 'list-content-no-description'}`}>
+                  <ClientTaskList 
+                    listSlug={currentListSlug} 
+                    refreshKey={refreshKey} 
+                    onScrollToTop={scrollToTop} 
+                    onOpenMenu={openMenuFn || undefined}
+                    isAuthenticated={isAuthenticated}
+                  />
                 </div>
                 {/* Changed: Desktop content without extra padding */}
                 <div className="hidden md:block">
-                  <ClientTaskList listSlug={currentListSlug} refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                  <ClientTaskList 
+                    listSlug={currentListSlug} 
+                    refreshKey={refreshKey} 
+                    onScrollToTop={scrollToTop} 
+                    onOpenMenu={openMenuFn || undefined}
+                    isAuthenticated={isAuthenticated}
+                  />
                 </div>
               </>
             ) : (
@@ -144,13 +170,23 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
                     All Tasks
                   </h1>
                 </div>
-                {/* Changed: Mobile content with padding for fixed header */}
-                <div className="md:hidden list-content-with-fixed-header">
-                  <ClientTaskList refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                {/* Changed: Mobile content with padding for fixed header (no description) */}
+                <div className="md:hidden list-content-no-description">
+                  <ClientTaskList 
+                    refreshKey={refreshKey} 
+                    onScrollToTop={scrollToTop} 
+                    onOpenMenu={openMenuFn || undefined}
+                    isAuthenticated={isAuthenticated}
+                  />
                 </div>
                 {/* Changed: Desktop content */}
                 <div className="hidden md:block">
-                  <ClientTaskList refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                  <ClientTaskList 
+                    refreshKey={refreshKey} 
+                    onScrollToTop={scrollToTop} 
+                    onOpenMenu={openMenuFn || undefined}
+                    isAuthenticated={isAuthenticated}
+                  />
                 </div>
               </>
             )}

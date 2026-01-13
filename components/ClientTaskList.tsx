@@ -10,12 +10,14 @@ interface ClientTaskListProps {
   refreshKey?: number
   onScrollToTop?: () => void
   onOpenMenu?: () => void
+  // Changed: Added isAuthenticated prop for bottom padding adjustment
+  isAuthenticated?: boolean
 }
 
 // Changed: Polling interval for real-time updates (5 seconds)
 const POLLING_INTERVAL = 5000
 
-export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, onOpenMenu }: ClientTaskListProps) {
+export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, onOpenMenu, isAuthenticated }: ClientTaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [lists, setLists] = useState<List[]>([])
   const [list, setList] = useState<List | null>(null)
@@ -325,6 +327,7 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
         listSlug={listSlug}
         onScrollToTop={onScrollToTop}
         onOpenMenu={onOpenMenu}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   )

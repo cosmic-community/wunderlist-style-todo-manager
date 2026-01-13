@@ -7,7 +7,6 @@ import TaskCard from '@/components/TaskCard'
 import AddTaskForm from '@/components/AddTaskForm'
 import EmptyState from '@/components/EmptyState'
 import { ChevronRight, Menu } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
 
 interface TaskListProps {
   initialTasks: Task[]
@@ -15,6 +14,8 @@ interface TaskListProps {
   listSlug?: string
   onScrollToTop?: () => void
   onOpenMenu?: () => void
+  // Changed: Added isAuthenticated prop for bottom padding adjustment
+  isAuthenticated?: boolean
 }
 
 // Track pending state changes for a task
@@ -23,11 +24,10 @@ interface PendingTaskState {
   // Add other fields here as needed for other optimistic updates
 }
 
-export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop, onOpenMenu }: TaskListProps) {
+export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop, onOpenMenu, isAuthenticated }: TaskListProps) {
   const [showCompleted, setShowCompleted] = useState(false)
   const [tasks, setTasks] = useState<Task[]>(initialTasks)
   const mountedRef = useRef(true)
-  const { isAuthenticated } = useAuth()
   // Track pending state changes for existing tasks (keyed by task ID)
   const pendingStateChangesRef = useRef<Map<string, PendingTaskState>>(new Map())
   // Changed: Track deleted task IDs to prevent them from reappearing on fetch
@@ -278,8 +278,8 @@ export default function TaskList({ initialTasks, lists, listSlug, onScrollToTop,
 
   return (
     <>
-      {/* Changed: Task list with proper spacing - added pb-28 for larger mobile bottom padding */}
-      <div className="space-y-2.5 md:space-y-2 pb-28 md:pb-24">
+      {/* Changed: Task list with proper spacing - dynamic bottom padding based on auth state */}
+      <div className={`space-y-2.5 md:space-y-2 ${isAuthenticated ? 'pb-28 md:pb-24' : 'pb-44 md:pb-24'}`}>
         {/* Pending Tasks */}
         {pendingTasks.map((task) => (
           <TaskCard
