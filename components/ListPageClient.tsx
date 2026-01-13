@@ -190,7 +190,7 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
                           {/* All Tasks option - currently selected */}
                           <button
                             onClick={() => handleAllTasksListSelect(undefined)}
-                            className="w-full px-3 py-2 text-sm text-left bg-accent/10 text-accent flex items-center gap-2.5 transition-colors"
+                            className="w-full px-4 py-3 text-base md:px-3 md:py-2 md:text-sm text-left bg-accent/10 text-accent flex items-center gap-2.5 transition-colors"
                           >
                             <Inbox className="w-5 h-5" />
                             <span className="truncate font-medium">All Tasks</span>
@@ -204,7 +204,7 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
                             <button
                               key={listItem.id}
                               onClick={() => handleAllTasksListSelect(listItem.slug)}
-                              className="w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                              className="w-full px-4 py-3 text-base md:px-3 md:py-2 md:text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
                             >
                               <div
                                 className="w-5 h-5 rounded-full flex-shrink-0"
