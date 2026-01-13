@@ -224,6 +224,28 @@
       line-height: 1.75rem;
     }
   }
+
+  /* Changed: Fixed list header on mobile - positioned at top like add task is at bottom */
+  .fixed-list-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    background-color: #f9fafb;
+    padding: 1rem 1rem 0.5rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .dark .fixed-list-header {
+    background-color: #000000;
+    border-bottom-color: #374151;
+  }
+
+  /* Changed: Add padding to list content to account for fixed header */
+  .list-content-with-fixed-header {
+    padding-top: 6rem;
+  }
 }
 
 /* Changed: Confetti animation - 600ms duration for the celebration */
@@ -290,6 +312,11 @@
   
   .safe-area-inset-right {
     padding-right: max(0px, env(safe-area-inset-right));
+  }
+
+  /* Changed: Update fixed header to respect safe area insets */
+  .fixed-list-header {
+    padding-top: max(1rem, calc(env(safe-area-inset-top) + 0.5rem));
   }
 }
 

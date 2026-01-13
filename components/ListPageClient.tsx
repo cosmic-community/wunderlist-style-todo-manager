@@ -100,6 +100,13 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
           onMenuOpenRegister={handleMenuOpenRegister}
         />
         
+        {/* Changed: Fixed header on mobile - list title and description */}
+        {currentListSlug && !isCreatingList && (
+          <div className="md:hidden fixed-list-header">
+            <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
+          </div>
+        )}
+        
         <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-safe-top">
           <div className="max-w-2xl mx-auto px-4 pb-32 pt-4 md:py-8">
             {/* Changed: Show creating list loading state when a list is being created */}
@@ -107,8 +114,18 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
               <SkeletonLoader variant="creating-list" />
             ) : currentListSlug ? (
               <>
-                <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
-                <ClientTaskList listSlug={currentListSlug} refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                {/* Changed: Desktop shows header inline, mobile shows it fixed */}
+                <div className="hidden md:block">
+                  <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
+                </div>
+                {/* Changed: Add top padding on mobile to account for fixed header */}
+                <div className="md:hidden list-content-with-fixed-header">
+                  <ClientTaskList listSlug={currentListSlug} refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                </div>
+                {/* Changed: Desktop content without extra padding */}
+                <div className="hidden md:block">
+                  <ClientTaskList listSlug={currentListSlug} refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                </div>
               </>
             ) : (
               // Changed: Show All Tasks when no list is selected
