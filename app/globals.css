@@ -233,7 +233,7 @@
     right: 0;
     z-index: 40;
     background-color: #f9fafb;
-    padding: 1rem 1rem 0.5rem 1rem;
+    padding: 1rem 1rem 0.75rem 1rem;
     border-bottom: 1px solid #e5e7eb;
   }
 
@@ -242,9 +242,9 @@
     border-bottom-color: #374151;
   }
 
-  /* Changed: Add padding to list content to account for fixed header */
+  /* Changed: Add padding to list content to account for fixed header - adjusted for proper spacing */
   .list-content-with-fixed-header {
-    padding-top: 6rem;
+    padding-top: 5rem;
   }
 }
 
@@ -259,10 +259,10 @@
   }
   100% {
     transform: translate(-50%, -50%) 
-                     translateX(calc(cos(var(--confetti-angle)) * 80px))
-                     translateY(calc(sin(var(--confetti-angle)) * 80px))
-                     rotate(720deg)
-                     scale(0.3);
+                         translateX(calc(cos(var(--confetti-angle)) * 80px))
+                         translateY(calc(sin(var(--confetti-angle)) * 80px))
+                         rotate(720deg)
+                         scale(0.3);
     opacity: 0;
   }
 }

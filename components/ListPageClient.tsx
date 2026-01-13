@@ -100,10 +100,18 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
           onMenuOpenRegister={handleMenuOpenRegister}
         />
         
-        {/* Changed: Fixed header on mobile - list title and description */}
-        {currentListSlug && !isCreatingList && (
+        {/* Changed: Fixed header on mobile - list title and description OR All Tasks title */}
+        {!isCreatingList && (
           <div className="md:hidden fixed-list-header">
-            <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
+            {currentListSlug ? (
+              <ClientListHeader listSlug={currentListSlug} refreshKey={refreshKey} />
+            ) : (
+              <div className="max-w-2xl mx-auto">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  All Tasks
+                </h1>
+              </div>
+            )}
           </div>
         )}
         
@@ -128,12 +136,22 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
                 </div>
               </>
             ) : (
-              // Changed: Show All Tasks when no list is selected
+              // Changed: Show All Tasks when no list is selected - with fixed header treatment on mobile
               <>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-                  All Tasks
-                </h1>
-                <ClientTaskList refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                {/* Changed: Desktop shows header inline */}
+                <div className="hidden md:block">
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+                    All Tasks
+                  </h1>
+                </div>
+                {/* Changed: Mobile content with padding for fixed header */}
+                <div className="md:hidden list-content-with-fixed-header">
+                  <ClientTaskList refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                </div>
+                {/* Changed: Desktop content */}
+                <div className="hidden md:block">
+                  <ClientTaskList refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                </div>
               </>
             )}
           </div>
