@@ -289,8 +289,8 @@ export default function TaskCard({
             } ${showDragHandle && !task.metadata.completed ? 'md:cursor-grab' : ''} cursor-pointer`}
             onClick={handleCardClick}
           >
-            {/* Drag handle - mobile only, for non-completed tasks when enabled */}
-            {showDragHandle && !task.metadata.completed && (
+            {/* Drag handle - mobile only, LEFT side when checkbox is on right */}
+            {showDragHandle && !task.metadata.completed && checkboxPosition === 'right' && (
               <button
                 className="md:hidden flex-shrink-0 touch-none cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 -ml-1"
                 onClick={(e) => e.stopPropagation()}
@@ -358,6 +358,19 @@ export default function TaskCard({
 
             {/* Checkbox - right side if preference is right */}
             {checkboxPosition === 'right' && CheckboxButton}
+            
+            {/* Drag handle - mobile only, RIGHT side when checkbox is on left */}
+            {showDragHandle && !task.metadata.completed && checkboxPosition === 'left' && (
+              <button
+                className="md:hidden flex-shrink-0 touch-none cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 -mr-1"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Drag to reorder"
+                {...dragHandleAttributes}
+                {...dragHandleListeners}
+              >
+                <GripVertical className="w-5 h-5" />
+              </button>
+            )}
             
           </div>
         </div>
