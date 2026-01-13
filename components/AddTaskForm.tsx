@@ -48,7 +48,8 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         title: taskTitle,
         completed: false,
         list: currentListId || '',
-        order: 0 // Changed: New tasks go to the top
+        order: 0, // Changed: New tasks go to the top
+        priority: { key: 'medium', value: 'Medium' } // Default priority
       }
     }
 
@@ -66,7 +67,8 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         body: JSON.stringify({
           title: taskTitle,
           list: currentListId || '', // Changed: Use 'list' to match API route expectations
-          order: 0 // New tasks go to the top
+          order: 0, // New tasks go to the top
+          priority: 'medium' // Default priority
         })
       })
     } catch (error) {

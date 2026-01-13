@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { List, User } from '@/types'
-import { Users, ChevronDown, Settings, Inbox } from 'lucide-react'
+import { Users, ChevronDown, Settings, Inbox, UserPlus } from 'lucide-react'
 import EditListModal from './EditListModal'
+import InviteModal from './InviteModal'
 
 interface ClientListHeaderProps {
   listSlug: string
@@ -29,6 +30,8 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
   const sharedDropdownRef = useRef<HTMLDivElement>(null)
   // State for edit modal
   const [showEditModal, setShowEditModal] = useState(false)
+  // State for invite modal
+  const [showInviteModal, setShowInviteModal] = useState(false)
   // State for list selector dropdown
   const [showListSelector, setShowListSelector] = useState(false)
   const listSelectorRef = useRef<HTMLDivElement>(null)
@@ -300,6 +303,19 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
                         <span className="truncate">{getUserDisplayName(sharedUser)}</span>
                       </div>
                     ))}
+                    {/* Invite button */}
+                    <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                      <button
+                        onClick={() => {
+                          setShowSharedDropdown(false)
+                          setShowInviteModal(true)
+                        }}
+                        className="w-full px-3 py-2 text-sm text-left text-accent hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        <span>Invite someone</span>
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -321,6 +337,15 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
           onOptimisticUpdate={handleOptimisticUpdate}
           onOptimisticDelete={handleOptimisticDelete}
           onRefresh={onRefresh}
+        />
+      )}
+
+      {/* Invite Modal */}
+      {showInviteModal && (
+        <InviteModal
+          listId={list.id}
+          listName={list.metadata.name}
+          onClose={() => setShowInviteModal(false)}
         />
       )}
     </>

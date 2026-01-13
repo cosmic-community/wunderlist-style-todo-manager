@@ -272,14 +272,10 @@ export default function TaskCard({
             className={`bg-white dark:bg-gray-900 rounded-xl px-4 py-4 md:py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all border border-gray-200 dark:border-gray-800 group ${
               isDraggingProp ? 'shadow-lg ring-2 ring-accent/50 opacity-90 cursor-grabbing' : ''
             } ${showDragHandle && !task.metadata.completed ? 'cursor-grab' : 'cursor-pointer'}`}
-            style={{
-              // Changed: Reverse flex direction when checkbox is on right
-              flexDirection: checkboxPosition === 'right' ? 'row-reverse' : 'row',
-            }}
             onClick={handleCardClick}
           >
-            {/* Checkbox on the edge */}
-            {CheckboxButton}
+            {/* Checkbox - left or right based on preference */}
+            {checkboxPosition === 'left' && CheckboxButton}
             
             {/* Title - use showCheckmark for visual styling - increased text size on mobile */}
             <span className={`flex-1 text-lg md:text-base transition-all duration-300 ease-out ${
@@ -287,6 +283,18 @@ export default function TaskCard({
             }`}>
               {task.metadata.title}
             </span>
+            
+            {/* Delete button - only show for completed tasks that aren't celebrating */}
+            {task.metadata.completed && !showCelebration && (
+              <button
+                onClick={handleDelete}
+                className="flex-shrink-0 p-2 md:p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                aria-label="Delete task"
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
+              </button>
+            )}
             
             {/* Task attribute indicators - description and due date */}
             <div className="flex items-center gap-2 flex-shrink-0">
@@ -304,20 +312,8 @@ export default function TaskCard({
                 </span>
               )}
             </div>
-            
-            {/* Delete button - only show for completed tasks that aren't celebrating */}
-            {task.metadata.completed && !showCelebration && (
-              <button
-                onClick={handleDelete}
-                className="flex-shrink-0 p-2 md:p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                aria-label="Delete task"
-                disabled={isDeleting}
-              >
-                <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
-              </button>
-            )}
 
-            {/* Priority flag - always at the far edge (opposite of checkbox) */}
+            {/* Priority flag - next to checkbox */}
             {task.metadata.priority && (
               <span title={`Priority: ${task.metadata.priority.value}`} className="flex-shrink-0">
                 <Flag className={`w-4 h-4 ${
@@ -331,6 +327,9 @@ export default function TaskCard({
                 }`} />
               </span>
             )}
+
+            {/* Checkbox - right side if preference is right */}
+            {checkboxPosition === 'right' && CheckboxButton}
             
           </div>
         </div>
