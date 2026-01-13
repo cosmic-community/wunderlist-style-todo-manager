@@ -5,6 +5,7 @@ import { List, User } from '@/types'
 import { Users, ChevronDown, Settings, Inbox, UserPlus } from 'lucide-react'
 import EditListModal from './EditListModal'
 import InviteModal from './InviteModal'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface ClientListHeaderProps {
   listSlug: string
@@ -16,6 +17,7 @@ interface ClientListHeaderProps {
 }
 
 export default function ClientListHeader({ listSlug, refreshKey, onListChange, onListUpdated, onListDeleted, onRefresh }: ClientListHeaderProps) {
+  const { user: currentUser } = useAuth()
   const [list, setList] = useState<List | null>(null)
   const [allLists, setAllLists] = useState<List[]>([])
   // Changed: Start with isLoading false to prevent skeleton on navigation
@@ -57,9 +59,48 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
     return sharedWith.filter((u): u is User => typeof u === 'object' && u !== null && 'id' in u)
   }
 
+  // Helper function to get the owner as a User object
+  const getOwner = (list: List): User | null => {
+    const owner = list.metadata.owner
+    if (typeof owner === 'object' && owner !== null && 'id' in owner) {
+      return owner as User
+    }
+    return null
+  }
+
+  // Helper function to get all users with access (owner + shared users)
+  const getAllUsersWithAccess = (list: List): User[] => {
+    const users: User[] = []
+    const seenIds = new Set<string>()
+    
+    // Add owner first
+    const owner = getOwner(list)
+    if (owner && !seenIds.has(owner.id)) {
+      users.push(owner)
+      seenIds.add(owner.id)
+    }
+    
+    // Add shared users
+    const sharedUsers = getSharedUsers(list)
+    for (const user of sharedUsers) {
+      if (!seenIds.has(user.id)) {
+        users.push(user)
+        seenIds.add(user.id)
+      }
+    }
+    
+    return users
+  }
+
   // Helper function to get display name for a user
   const getUserDisplayName = (userObj: User): string => {
     return userObj.metadata?.display_name || userObj.title || 'Unknown User'
+  }
+
+  // Helper function to check if a user is the owner
+  const isOwner = (userObj: User, list: List): boolean => {
+    const owner = getOwner(list)
+    return owner !== null && owner.id === userObj.id
   }
 
   const fetchList = useCallback(async (): Promise<List | null> => {
@@ -201,8 +242,7 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
     return null
   }
 
-  const sharedUsers = getSharedUsers(list)
-  const hasSharedUsers = sharedUsers.length > 0
+  const allUsersWithAccess = getAllUsersWithAccess(list)
 
   return (
     <>
@@ -273,53 +313,63 @@ export default function ClientListHeader({ listSlug, refreshKey, onListChange, o
               <Settings className="w-5 h-5" />
             </button>
 
-            {/* Shared users dropdown */}
-            {hasSharedUsers && (
-              <div className="relative" ref={sharedDropdownRef}>
-                <button
-                  onClick={() => setShowSharedDropdown(!showSharedDropdown)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                  aria-label={`Shared with ${sharedUsers.length} user${sharedUsers.length > 1 ? 's' : ''}`}
-                >
-                  <Users className="w-4 h-4" />
-                  <span>{sharedUsers.length}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform ${showSharedDropdown ? 'rotate-180' : ''}`} />
-                </button>
+            {/* Users with access dropdown - always shown */}
+            <div className="relative" ref={sharedDropdownRef}>
+              <button
+                onClick={() => setShowSharedDropdown(!showSharedDropdown)}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label={`${allUsersWithAccess.length} user${allUsersWithAccess.length !== 1 ? 's' : ''} with access`}
+              >
+                <Users className="w-4 h-4" />
+                <span>{allUsersWithAccess.length}</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${showSharedDropdown ? 'rotate-180' : ''}`} />
+              </button>
 
-                {/* Shared users dropdown menu */}
-                {showSharedDropdown && (
-                  <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                      Shared with
-                    </div>
-                    {sharedUsers.map((sharedUser) => (
+              {/* Users with access dropdown menu */}
+              {showSharedDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                  <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                    People with access
+                  </div>
+                  {allUsersWithAccess.map((userObj) => {
+                    const isCurrentUser = currentUser && currentUser.id === userObj.id
+                    const userIsOwner = isOwner(userObj, list)
+                    return (
                       <div
-                        key={sharedUser.id}
+                        key={userObj.id}
                         className="px-3 py-2 text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2.5"
                       >
                         <div className="w-7 h-7 rounded-full bg-accent/20 flex items-center justify-center text-xs font-medium text-accent">
-                          {getUserDisplayName(sharedUser).charAt(0).toUpperCase()}
+                          {getUserDisplayName(userObj).charAt(0).toUpperCase()}
                         </div>
-                        <span className="truncate">{getUserDisplayName(sharedUser)}</span>
+                        <div className="flex-1 min-w-0">
+                          <span className="truncate block">
+                            {getUserDisplayName(userObj)}
+                            {isCurrentUser && <span className="text-gray-500 dark:text-gray-400"> (You)</span>}
+                          </span>
+                          {userIsOwner && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">Owner</span>
+                          )}
+                        </div>
                       </div>
-                    ))}
-                    {/* Invite button */}
-                    <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
-                      <button
-                        onClick={() => {
-                          setShowSharedDropdown(false)
-                          setShowInviteModal(true)
-                        }}
-                        className="w-full px-3 py-2 text-sm text-left text-accent hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
-                      >
-                        <UserPlus className="w-4 h-4" />
-                        <span>Invite someone</span>
-                      </button>
-                    </div>
+                    )
+                  })}
+                  {/* Invite button */}
+                  <div className="border-t border-gray-200 dark:border-gray-700 mt-2 pt-2">
+                    <button
+                      onClick={() => {
+                        setShowSharedDropdown(false)
+                        setShowInviteModal(true)
+                      }}
+                      className="w-full px-3 py-2 text-sm text-left text-accent hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2.5 transition-colors"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Invite someone</span>
+                    </button>
                   </div>
-                )}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
         {list.metadata.description && (
