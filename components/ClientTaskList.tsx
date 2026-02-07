@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { Task, List } from '@/types'
 import TaskList from './TaskList'
 import SkeletonLoader from './SkeletonLoader'
+import EmptyState from './EmptyState'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface ClientTaskListProps {
@@ -11,12 +12,14 @@ interface ClientTaskListProps {
   refreshKey?: number
   onScrollToTop?: () => void
   onOpenMenu?: () => void
+  // Changed: Callback for creating a list from the empty state when no list is selected
+  onCreateList?: () => void
 }
 
 // Changed: Polling interval for real-time updates (5 seconds)
 const POLLING_INTERVAL = 5000
 
-export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, onOpenMenu }: ClientTaskListProps) {
+export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, onOpenMenu, onCreateList }: ClientTaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [lists, setLists] = useState<List[]>([])
   const [list, setList] = useState<List | null>(null)
@@ -361,6 +364,16 @@ export default function ClientTaskList({ listSlug, refreshKey, onScrollToTop, on
     return (
       <div className="text-center py-8">
         <p className="text-red-500">{error}</p>
+      </div>
+    )
+  }
+
+  // Changed: When on All Tasks view (no listSlug) and there are no tasks, show the no-list-selected empty state
+  // This guides users to select or create a list before adding tasks
+  if (!listSlug && tasks.length === 0) {
+    return (
+      <div>
+        <EmptyState variant="no-list-selected" onCreateList={onCreateList} />
       </div>
     )
   }
