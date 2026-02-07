@@ -140,6 +140,11 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
     handleListChange(slug)
   }
 
+  // Changed: Handler to open create list modal from empty state
+  const handleCreateListFromEmpty = useCallback(() => {
+    setShowCreateModal(true)
+  }, [])
+
   return (
     // Changed: Use h-screen with flex layout and overflow-hidden to prevent excessive scrolling
     <div className="flex h-screen bg-gray-50 dark:bg-black overflow-hidden">
@@ -253,7 +258,8 @@ export default function ListPageClient({ slug: initialSlug }: ListPageClientProp
                     </div>
                   </div>
                 </div>
-                <ClientTaskList refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} />
+                {/* Changed: Pass onCreateList callback so empty state can trigger list creation */}
+                <ClientTaskList refreshKey={refreshKey} onScrollToTop={scrollToTop} onOpenMenu={openMenuFn || undefined} onCreateList={handleCreateListFromEmpty} />
               </>
             )}
           </div>

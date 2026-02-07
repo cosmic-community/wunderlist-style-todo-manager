@@ -82,7 +82,7 @@ export async function GET(request: Request) {
         }
       })
     }
-    
+      
     // Changed: Return demo tasks for unauthenticated users
     try {
       const response = await cosmic.objects
@@ -184,6 +184,14 @@ export async function POST(request: Request) {
     const data = await request.json()
     const session = await getSession()
     
+    // Changed: Validate that a list is provided - all tasks require a list
+    if (!data.list) {
+      return NextResponse.json(
+        { error: 'A list is required. Please select or create a list before adding a task.' },
+        { status: 400 }
+      )
+    }
+    
     // Changed: Set owner to current user if authenticated
     const ownerId = session?.user?.id || ''
     
@@ -196,7 +204,7 @@ export async function POST(request: Request) {
         completed: false,
         priority: data.priority ? { key: data.priority, value: data.priority.charAt(0).toUpperCase() + data.priority.slice(1) } : { key: 'medium', value: 'Medium' },
         due_date: data.due_date || '',
-        list: data.list || '',
+        list: data.list,
         owner: ownerId, // Changed: Always set owner to current user
         order: data.order ?? 0 // Changed: Include order field for new tasks
       }

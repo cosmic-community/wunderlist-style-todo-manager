@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Task, List } from '@/types'
-import { Plus } from 'lucide-react'
+import { Plus, ListChecks } from 'lucide-react'
 
 interface AddTaskFormProps {
   lists: List[]
@@ -29,9 +29,13 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
   const currentList = listSlug ? lists.find(l => l.slug === listSlug) : null
   const currentListId = currentList?.id
 
+  // Changed: Determine if we have a valid list to add tasks to
+  const hasValidList = !!currentListId
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim() || isSubmitting) return
+    // Changed: Require a valid list before allowing task creation
+    if (!title.trim() || isSubmitting || !hasValidList) return
 
     setIsSubmitting(true)
     const taskTitle = title.trim()
@@ -73,9 +77,21 @@ export default function AddTaskForm({ lists, listSlug, onOptimisticAdd }: AddTas
         priority: 'medium'
       })
     }).catch(error => {
-      console.error('Error creating task:', error)
-      // Note: We could revert the optimistic add here if needed
+        console.error('Error creating task:', error)
+        // Note: We could revert the optimistic add here if needed
     })
+  }
+
+  // Changed: If no valid list is selected, show a message instead of the form
+  if (!hasValidList) {
+    return (
+      <div className="flex items-center gap-3 py-3 text-gray-400 dark:text-gray-500">
+        <div className="flex-shrink-0">
+          <ListChecks className="w-5 h-5" />
+        </div>
+        <span className="text-sm">Select a list to add tasks</span>
+      </div>
+    )
   }
 
   return (
